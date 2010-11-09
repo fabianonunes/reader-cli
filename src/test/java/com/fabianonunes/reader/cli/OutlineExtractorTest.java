@@ -4,6 +4,8 @@ import java.io.IOException;
 
 import net.sf.json.JSONArray;
 
+import org.apache.pdfbox.pdmodel.font.PDFont;
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -18,11 +20,18 @@ public class OutlineExtractorTest extends AbstractTest {
 
 		super.setUp();
 
-		// pddoc = PDDocument.load(new File("/media/TST02/Processos-Analysys"
-		// + "/Pauta 2010-26/chunk1" + "/4800-25.2009.5.22.0000.pdf"));
-
 		box = new OutlineExtractor(pddoc);
 
+	}
+
+	@Test
+	public void testCharWidth() throws IOException {
+
+		PDFont font = PDType1Font.HELVETICA_BOLD;
+
+		float textWidth = (font.getStringWidth(" ") / 1000) * 13;
+
+		System.out.println(textWidth);
 	}
 
 	@After

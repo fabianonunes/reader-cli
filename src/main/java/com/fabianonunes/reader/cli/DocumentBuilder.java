@@ -55,12 +55,11 @@ public class DocumentBuilder {
 
 	}
 
-	public Collection<PDPage> iterate(final String pattern, final File fileDir,
-			final PDDocument output) {
+	public Collection<PDPage> iterate(final String pattern, final File fileDir) {
 
 		List<PDPage> retVal = new ArrayList<PDPage>();
 
-		ExecutorService executor = Executors.newFixedThreadPool(6);
+		ExecutorService executor = Executors.newFixedThreadPool(8);
 
 		LinkedList<Future<List<PDPage>>> tasks = new LinkedList<Future<List<PDPage>>>();
 
@@ -73,6 +72,12 @@ public class DocumentBuilder {
 						public List<PDPage> call() throws Exception {
 
 							System.out.println(file);
+
+							File outputFile = new File(fileDir, file.getName());
+
+							if (outputFile.exists()) {
+								return null;
+							}
 
 							PDDocument pddoc = PDDocument.load(file);
 
@@ -100,7 +105,7 @@ public class DocumentBuilder {
 
 								if (hasPage) {
 									OutputStream os = new FileOutputStream(
-											new File(fileDir, file.getName()));
+											outputFile);
 
 									newPddoc.save(os);
 									newPddoc.close();
