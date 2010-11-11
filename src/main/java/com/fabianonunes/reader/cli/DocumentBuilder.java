@@ -88,7 +88,7 @@ public class DocumentBuilder {
 							try {
 
 								List<PDPage> pdpages = extractor
-										.filterPages(pattern);
+										.filterPagesByBookmarkName(pattern);
 
 								if (pdpages.size() == 0) {
 									return null;

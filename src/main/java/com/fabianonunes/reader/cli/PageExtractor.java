@@ -22,7 +22,7 @@ public class PageExtractor {
 
 	}
 
-	public List<PDPage> filterPages(String pattern) throws IOException {
+	public List<PDPage> filterPagesByBookmarkName(String pattern) throws IOException {
 
 		OutlineExtractor out = new OutlineExtractor(pddoc);
 
