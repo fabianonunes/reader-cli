@@ -41,7 +41,7 @@ public class PageExtractorTest extends AbstractTest {
 		// doc.importPage(page);
 		// }
 
-		List<PDPage> pages = extractor.filterPages("^Procura.*");
+		List<PDPage> pages = extractor.filterPagesByBookmarkName("^Procura.*");
 
 		Assert.assertEquals(2, pages.size());
 
