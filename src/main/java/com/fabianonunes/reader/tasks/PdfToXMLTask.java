@@ -1,10 +1,13 @@
 package com.fabianonunes.reader.tasks;
 
 import java.io.File;
+import java.io.Serializable;
 import java.security.InvalidParameterException;
 import java.util.concurrent.Callable;
 
-public class PdfToXMLTask implements Callable<Integer> {
+public class PdfToXMLTask implements Callable<Integer>, Serializable {
+
+	private static final long serialVersionUID = 1L;
 
 	private static Runtime runtime = Runtime.getRuntime();
 	private Integer firstPage;
@@ -51,6 +54,8 @@ public class PdfToXMLTask implements Callable<Integer> {
 	@Override
 	public Integer call() throws Exception {
 
+		System.out.println("xml");
+
 		if (firstPage == null || lastPage == null || totalPages == null) {
 			throw new InvalidParameterException();
 		}
@@ -67,12 +72,18 @@ public class PdfToXMLTask implements Callable<Integer> {
 
 		p.waitFor();
 
+		p.destroy();
+
 		command = "tidy -utf8 -xml -w 255 -i -c -q -asxml -o "
 				+ output.getAbsolutePath() + " " + output.getAbsolutePath();
 
 		p = runtime.exec(command);
 
-		return p.waitFor();
+		p.waitFor();
+		
+		p.destroy();
+		
+		return null;
 
 	}
 }

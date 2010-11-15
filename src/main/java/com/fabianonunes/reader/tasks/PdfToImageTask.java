@@ -1,10 +1,14 @@
 package com.fabianonunes.reader.tasks;
 
 import java.io.File;
+import java.io.Serializable;
 import java.security.InvalidParameterException;
+import java.util.Date;
 import java.util.concurrent.Callable;
 
-public class PdfToImageTask implements Callable<Integer> {
+public class PdfToImageTask implements Callable<Integer>, Serializable {
+
+	private static final long serialVersionUID = 1L;
 
 	private static Runtime runtime = Runtime.getRuntime();
 	private Integer firstPage;
@@ -57,6 +61,8 @@ public class PdfToImageTask implements Callable<Integer> {
 			throw new InvalidParameterException();
 		}
 
+		System.out.println(new Date());
+
 		Integer lastPage = Math.min(this.lastPage, (firstPage + totalPages));
 
 		String command = "pdftoppm -r 300" + //
@@ -68,7 +74,11 @@ public class PdfToImageTask implements Callable<Integer> {
 
 		Process p = runtime.exec(command);
 
-		return p.waitFor();
+		p.waitFor();
+		p.destroy();
+
+		return null;
 
 	}
+
 }

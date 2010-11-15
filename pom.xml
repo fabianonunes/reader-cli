@@ -5,8 +5,7 @@
 	<artifactId>reader-cli</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<properties>
-		<org.slf4j.version>1.5.10</org.slf4j.version>
-		<lucene.version>3.0.2</lucene.version>
+		<maven.test.skip>true</maven.test.skip>
 	</properties>
 
 	<build>
@@ -16,6 +15,15 @@
 				<configuration>
 					<source>1.6</source>
 					<target>1.6</target>
+				</configuration>
+			</plugin>
+			<plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<version>2.2-beta-5</version>
+				<configuration>
+					<descriptorRefs>
+						<descriptorRef>jar-with-dependencies</descriptorRef>
+					</descriptorRefs>
 				</configuration>
 			</plugin>
 		</plugins>
@@ -59,6 +67,21 @@
 			<artifactId>reader</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
 			<type>war</type>
+		</dependency>
+		<dependency>
+			<groupId>com.hazelcast</groupId>
+			<artifactId>hazelcast</artifactId>
+			<version>1.9</version>
+		</dependency>
+		<dependency>
+			<groupId>com.hazelcast</groupId>
+			<artifactId>hazelcast-client</artifactId>
+			<version>1.9</version>
+		</dependency>
+		<dependency>
+			<groupId>com.hazelcast</groupId>
+			<artifactId>hazelcast-all</artifactId>
+			<version>1.9</version>
 		</dependency>
 	</dependencies>
 </project>

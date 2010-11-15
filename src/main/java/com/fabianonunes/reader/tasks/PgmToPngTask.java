@@ -1,12 +1,15 @@
 package com.fabianonunes.reader.tasks;
 
 import java.io.File;
+import java.io.Serializable;
 import java.security.InvalidParameterException;
 import java.util.concurrent.Callable;
 
 import org.apache.commons.io.FileUtils;
 
-public class PgmToPngTask implements Callable<Integer> {
+public class PgmToPngTask implements Callable<Integer>, Serializable {
+
+	private static final long serialVersionUID = 1L;
 
 	private static Runtime runtime = Runtime.getRuntime();
 
@@ -40,6 +43,8 @@ public class PgmToPngTask implements Callable<Integer> {
 
 		p.waitFor();
 
+		p.destroy();
+
 		FileUtils.deleteQuietly(pgmFile);
 
 		command = "convert " + pngFile + " -resize x200 "
@@ -47,7 +52,11 @@ public class PgmToPngTask implements Callable<Integer> {
 
 		p = runtime.exec(command);
 
-		return p.waitFor();
+		p.waitFor();
+
+		p.destroy();
+
+		return null;
 
 	}
 }
