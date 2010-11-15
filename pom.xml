@@ -58,6 +58,7 @@
 			<groupId>com.fabianonunes</groupId>
 			<artifactId>reader</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
+			<type>war</type>
 		</dependency>
 	</dependencies>
 </project>

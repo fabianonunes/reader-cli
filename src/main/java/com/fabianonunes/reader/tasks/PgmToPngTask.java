@@ -4,6 +4,8 @@ import java.io.File;
 import java.security.InvalidParameterException;
 import java.util.concurrent.Callable;
 
+import org.apache.commons.io.FileUtils;
+
 public class PgmToPngTask implements Callable<Integer> {
 
 	private static Runtime runtime = Runtime.getRuntime();
@@ -37,6 +39,8 @@ public class PgmToPngTask implements Callable<Integer> {
 		Process p = runtime.exec(command);
 
 		p.waitFor();
+
+		FileUtils.deleteQuietly(pgmFile);
 
 		command = "convert " + pngFile + " -resize x200 "
 				+ tFile.getAbsolutePath();
