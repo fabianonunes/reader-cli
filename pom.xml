@@ -49,7 +49,11 @@
 			<artifactId>itext</artifactId>
 			<version>2.1.7</version>
 		</dependency>
-
+		<dependency>
+			<groupId>net.sf.vtd-xml</groupId>
+			<artifactId>vtd-xml</artifactId>
+			<version>2.9</version>
+		</dependency>
 		<dependency>
 			<groupId>com.fabianonunes</groupId>
 			<artifactId>reader</artifactId>
