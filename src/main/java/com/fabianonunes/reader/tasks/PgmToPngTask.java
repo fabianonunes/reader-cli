@@ -32,7 +32,9 @@ public class PgmToPngTask implements Callable<Integer>, Serializable {
 				".png"));
 
 		File tDir = new File(pgmFile.getParentFile(), "t");
-		tDir.mkdir();
+		if (!tDir.exists()) {
+			tDir.mkdir();
+		}
 
 		File tFile = new File(tDir, pngFile.getName());
 

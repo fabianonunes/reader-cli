@@ -5,6 +5,8 @@ import java.io.Serializable;
 import java.security.InvalidParameterException;
 import java.util.concurrent.Callable;
 
+import com.fabianonunes.reader.storage.ReaderDocument;
+
 public class PdfToXMLTask implements Callable<Integer>, Serializable {
 
 	private static final long serialVersionUID = 1L;
@@ -17,13 +19,11 @@ public class PdfToXMLTask implements Callable<Integer>, Serializable {
 	private File pdfFile;
 	private File outputDir;
 
-	public PdfToXMLTask(File pdfFile) {
+	public PdfToXMLTask(ReaderDocument document) {
 
-		this.pdfFile = pdfFile;
+		this.pdfFile = document.getPdf();
 
-		outputDir = new File(pdfFile.getParentFile(), "text");
-
-		outputDir.mkdir();
+		outputDir = document.getTextFolder();
 
 	}
 
@@ -80,9 +80,9 @@ public class PdfToXMLTask implements Callable<Integer>, Serializable {
 		p = runtime.exec(command);
 
 		p.waitFor();
-		
+
 		p.destroy();
-		
+
 		return null;
 
 	}

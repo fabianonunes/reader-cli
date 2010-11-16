@@ -2,7 +2,10 @@ package com.fabianonunes.reader.cli;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -10,43 +13,66 @@ import java.util.concurrent.Future;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
 
+import com.fabianonunes.reader.CLIActions;
+import com.fabianonunes.reader.storage.ReaderDocument;
 import com.fabianonunes.reader.tasks.PdfToImageTask;
 import com.fabianonunes.reader.tasks.PdfToXMLTask;
 import com.fabianonunes.reader.tasks.PgmToPngTask;
 import com.fabianonunes.reader.tasks.XmlAssembler;
+import com.fabianonunes.reader.text.index.BatchIndexer;
+import com.itextpdf.text.pdf.PdfReader;
 
 public class Converter {
 
-	private File pdfFile = new File("/home/fabiano/workdir/converter/pdf.pdf");
+	private FileFilter xmlFilter = FileFilterUtils.suffixFileFilter(".xml");
+	private FileFilter pgmFilter = FileFilterUtils.suffixFileFilter(".pgm");
+	private FileFilter pngFilter = FileFilterUtils.suffixFileFilter(".png");
+	private static FileFilter pdfFilter = FileFilterUtils
+			.suffixFileFilter(".pdf");
 
 	public static void main(String[] args) throws Throwable {
 
-		Converter converter = new Converter();
+		File inputDir = new File(
+				"/media/TST02/Processos-Analysys/reclamacao-trabalhista");
 
-		converter.convert();
+		File[] pdfFiles = inputDir.listFiles(pdfFilter);
+
+		for (File file : pdfFiles) {
+
+			Converter c = new Converter();
+
+			c.convert(ReaderDocument.generateDocument(file));
+
+		}
 
 	}
 
-	public void convert() throws Throwable {
+	public void convert(ReaderDocument document) throws Throwable {
 
-		ExecutorService executor = Executors.newFixedThreadPool(4);
+		File pdfFile = document.getPdf();
+
+		ExecutorService executor = Executors.newFixedThreadPool(10);
 
 		LinkedList<Future<Integer>> tasks = new LinkedList<Future<Integer>>();
 
-		Integer numOfPages = 100;
+		PdfReader reader = new PdfReader(pdfFile.getAbsolutePath());
 
-		Integer iterations = new Double(Math.ceil(numOfPages / 8f)).intValue();
+		int numOfPages = reader.getNumberOfPages();
 
-		Integer step = 8;
+		reader.close();
+
+		Integer iterations = new Double(Math.ceil(numOfPages / 10f)).intValue();
+
+		Integer step = 10;
 
 		for (int i = 0; i < iterations; i++) {
 
-			PdfToImageTask pdfTask = new PdfToImageTask(pdfFile);
+			PdfToImageTask pdfTask = new PdfToImageTask(document);
 			pdfTask.setFirstPage(step * i + 1);
 			pdfTask.setTotalPages(step - 1);
 			pdfTask.setLastPage(numOfPages);
 
-			PdfToXMLTask xmlTask = new PdfToXMLTask(pdfFile);
+			PdfToXMLTask xmlTask = new PdfToXMLTask(document);
 			xmlTask.setFirstPage(step * i + 1);
 			xmlTask.setTotalPages(step - 1);
 			xmlTask.setLastPage(numOfPages);
@@ -72,23 +98,14 @@ public class Converter {
 
 		executor.shutdown();
 
-		File dir = new File("/home/fabiano/workdir/converter/text");
+		File[] files = document.getTextFolder().listFiles(xmlFilter);
 
-		File fo = new File("/home/fabiano/workdir/converter/text/full.xml");
+		XmlAssembler.assemble(files, document.getFullText(), "//PAGE");
 
-		FileUtils.deleteQuietly(fo);
+		CLIActions.simpleXML(document.getFullText());
+		CLIActions.optimizeXML(document.getFullText());
 
-		FileFilter filter = FileFilterUtils.suffixFileFilter(".xml");
-
-		File[] files = dir.listFiles(filter);
-
-		XmlAssembler.assemble(files, fo, "//PAGE");
-
-		File imagesDir = new File("/home/fabiano/workdir/converter/images/png");
-
-		filter = FileFilterUtils.suffixFileFilter(".pgm");
-
-		File[] pgmFiles = imagesDir.listFiles(filter);
+		File[] pgmFiles = document.getImageFolder().listFiles(pgmFilter);
 
 		executor = Executors.newFixedThreadPool(4);
 
@@ -114,6 +131,30 @@ public class Converter {
 		}
 
 		executor.shutdown();
+
+		File[] pngFiles = document.getImageFolder().listFiles(pngFilter);
+		File[] thumbsFiles = document.getThumbsFolder().listFiles(pngFilter);
+
+		List<File> pngs = new ArrayList<File>();
+
+		pngs.addAll(Arrays.asList(pngFiles));
+		pngs.addAll(Arrays.asList(thumbsFiles));
+
+		for (File pngFile : pngs) {
+
+			File toFile = new File(pngFile.getParentFile(), pngFile.getName()
+					.replaceAll("p-0*", ""));
+
+			pngFile.renameTo(toFile);
+
+		}
+
+		FileUtils.cleanDirectory(document.getIndexFolder());
+
+		BatchIndexer indexer = new BatchIndexer(document.getIndexFolder());
+
+		indexer.index(document.getFullText());
+		indexer.close();
 
 	}
 

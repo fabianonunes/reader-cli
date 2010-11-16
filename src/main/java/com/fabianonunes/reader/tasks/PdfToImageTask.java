@@ -6,6 +6,8 @@ import java.security.InvalidParameterException;
 import java.util.Date;
 import java.util.concurrent.Callable;
 
+import com.fabianonunes.reader.storage.ReaderDocument;
+
 public class PdfToImageTask implements Callable<Integer>, Serializable {
 
 	private static final long serialVersionUID = 1L;
@@ -18,15 +20,11 @@ public class PdfToImageTask implements Callable<Integer>, Serializable {
 	private File pdfFile;
 	private File outputDir;
 
-	public PdfToImageTask(File pdfFile) {
+	public PdfToImageTask(ReaderDocument document) {
 
-		this.pdfFile = pdfFile;
+		this.pdfFile = document.getPdf();
 
-		outputDir = new File(pdfFile.getParentFile(), "images");
-		outputDir.mkdir();
-
-		outputDir = new File(outputDir, "png");
-		outputDir.mkdir();
+		outputDir = document.getImageFolder();
 
 	}
 

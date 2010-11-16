@@ -20,18 +20,12 @@ import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 
+import com.fabianonunes.reader.pdf.stripper.PageExtractor;
+
 public class DocumentBuilder {
 
 	List<PDPage> pages;
 	List<File> files;
-
-	/**
-	 * DocumentBuilder.input(File[] files)
-	 * DocumentBuilder.getPagesByBookmarks(string pattern); 19343
-	 * 
-	 * @throws ExecutionException
-	 * @throws InterruptedException
-	 */
 
 	public DocumentBuilder(File input) throws InterruptedException,
 			ExecutionException {

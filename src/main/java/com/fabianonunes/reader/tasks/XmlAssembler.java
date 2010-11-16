@@ -1,12 +1,10 @@
 package com.fabianonunes.reader.tasks;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.filefilter.FileFilterUtils;
 
 import com.ximpleware.AutoPilot;
 import com.ximpleware.EOFException;
@@ -22,30 +20,14 @@ import com.ximpleware.XPathParseException;
 
 public class XmlAssembler {
 
-	public static void main(String[] args) throws EncodingException,
-			EOFException, EntityException, XPathParseException, NavException,
-			XPathEvalException, ParseException, IOException {
-
-		File dir = new File("/home/fabiano/workdir/converter");
-
-		File fo = new File("/home/fabiano/workdir/converter/result.xml");
-
-		FileUtils.deleteQuietly(fo);
-
-		FileFilter filter = FileFilterUtils.suffixFileFilter(".xml");
-
-		File[] files = dir.listFiles(filter);
-
-		XmlAssembler.assemble(files, fo, "//PAGE");
-
-	}
-
 	public static void assemble(File[] files, File output, String query)
 			throws XPathParseException, IOException, NavException,
 			XPathEvalException, EncodingException, EOFException,
 			EntityException, ParseException {
 
 		VTDGen vg;
+
+		FileUtils.deleteQuietly(output);
 
 		FileOutputStream fos = new FileOutputStream(output);
 
