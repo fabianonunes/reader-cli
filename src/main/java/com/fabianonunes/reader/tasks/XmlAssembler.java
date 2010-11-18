@@ -41,8 +41,6 @@ public class XmlAssembler {
 
 		for (File file : files) {
 
-			System.out.println(file);
-
 			byte[] b = FileUtils.readFileToByteArray(file);
 
 			vg = new VTDGen();

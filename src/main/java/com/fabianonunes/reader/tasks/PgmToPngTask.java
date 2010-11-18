@@ -7,22 +7,32 @@ import java.util.concurrent.Callable;
 
 import org.apache.commons.io.FileUtils;
 
+import com.fabianonunes.reader.storage.ReaderDocument;
+
 public class PgmToPngTask implements Callable<Integer>, Serializable {
 
 	private static final long serialVersionUID = 1L;
 
 	private static Runtime runtime = Runtime.getRuntime();
 
-	private File pgmFile;
+	private String pgmFileName;
 
-	public PgmToPngTask(File pgmImage) {
+	private ReaderDocument rdd;
 
-		this.pgmFile = pgmImage;
+	public PgmToPngTask(ReaderDocument document, File pgmImage) {
+
+		this.rdd = document;
+
+		this.pgmFileName = pgmImage.getName();
 
 	}
 
 	@Override
 	public Integer call() throws Exception {
+
+		File pgmFile = new File(rdd.getImageFolder(), pgmFileName);
+
+		System.out.println("Converting " + pgmFile.getName() + "...");
 
 		if (pgmFile == null || !pgmFile.isFile()) {
 			throw new InvalidParameterException();
@@ -42,6 +52,15 @@ public class PgmToPngTask implements Callable<Integer>, Serializable {
 				+ pngFile.getAbsolutePath();
 
 		Process p = runtime.exec(command);
+
+		StreamGobbler errorGobbler = new StreamGobbler(p.getErrorStream(),
+				"ERROR");
+
+		StreamGobbler outputGobbler = new StreamGobbler(p.getInputStream(),
+				"OUTPUT");
+
+		errorGobbler.start();
+		outputGobbler.start();
 
 		p.waitFor();
 

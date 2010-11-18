@@ -15,15 +15,11 @@ public class PdfToXMLTask implements Callable<Integer>, Serializable {
 	private Integer firstPage;
 	private Integer totalPages;
 	private Integer lastPage;
-
-	private File pdfFile;
-	private File outputDir;
+	private ReaderDocument rdd;
 
 	public PdfToXMLTask(ReaderDocument document) {
 
-		this.pdfFile = document.getPdf();
-
-		outputDir = document.getTextFolder();
+		this.rdd = document;
 
 	}
 
@@ -54,6 +50,10 @@ public class PdfToXMLTask implements Callable<Integer>, Serializable {
 	@Override
 	public Integer call() throws Exception {
 
+		File pdfFile = rdd.getPdf();
+
+		File outputDir = rdd.getTextFolder();
+
 		System.out.println("xml");
 
 		if (firstPage == null || lastPage == null || totalPages == null) {
@@ -64,11 +64,39 @@ public class PdfToXMLTask implements Callable<Integer>, Serializable {
 
 		Integer lastPage = Math.min(this.lastPage, (firstPage + totalPages));
 
-		String command = "pdftoxml -noImage -noImageInline" + " -f "
-				+ firstPage + " -l " + lastPage + " "
-				+ pdfFile.getAbsolutePath() + " " + output.getAbsolutePath();
+		String command;
 
-		Process p = runtime.exec(command);
+		Process p;
+
+		command = "pdftoxml -noImage -noImageInline" + " -f " + firstPage
+				+ " -l " + lastPage + " " + pdfFile.getAbsolutePath() + " "
+				+ output.getAbsolutePath();
+
+		String osName = System.getProperty("os.name");
+
+		if (osName.contains("Windows")) {
+
+			String[] cmd = new String[3];
+			cmd[0] = "cmd.exe";
+			cmd[1] = "/C";
+			cmd[2] = command;
+
+			p = runtime.exec(cmd);
+
+			StreamGobbler errorGobbler = new StreamGobbler(p.getErrorStream(),
+					"ERROR");
+
+			StreamGobbler outputGobbler = new StreamGobbler(p.getInputStream(),
+					"OUTPUT");
+
+			// kick them off
+			errorGobbler.start();
+			outputGobbler.start();
+
+		} else {
+
+			p = runtime.exec(command);
+		}
 
 		p.waitFor();
 
@@ -86,4 +114,6 @@ public class PdfToXMLTask implements Callable<Integer>, Serializable {
 		return null;
 
 	}
+
+	
 }

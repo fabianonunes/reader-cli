@@ -16,16 +16,10 @@ public class PdfToImageTask implements Callable<Integer>, Serializable {
 	private Integer firstPage;
 	private Integer totalPages;
 	private Integer lastPage;
-
-	private File pdfFile;
-	private File outputDir;
+	private ReaderDocument document;
 
 	public PdfToImageTask(ReaderDocument document) {
-
-		this.pdfFile = document.getPdf();
-
-		outputDir = document.getImageFolder();
-
+		this.document = document;
 	}
 
 	public Integer getFirstPage() {
@@ -58,6 +52,10 @@ public class PdfToImageTask implements Callable<Integer>, Serializable {
 		if (firstPage == null || lastPage == null || totalPages == null) {
 			throw new InvalidParameterException();
 		}
+
+		File pdfFile = document.getPdf();
+
+		File outputDir = document.getImageFolder();
 
 		System.out.println(new Date());
 

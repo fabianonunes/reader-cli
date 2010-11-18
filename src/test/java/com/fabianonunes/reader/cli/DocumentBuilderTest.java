@@ -16,7 +16,7 @@ public class DocumentBuilderTest {
 	public void setUp() throws Exception {
 
 		builder = new DocumentBuilder(new File(
-				"/media/TST02/Processos-Analysys/"));
+				"/media/TST02/Processos-Analysys/2010-32"));
 
 	}
 
@@ -24,7 +24,7 @@ public class DocumentBuilderTest {
 	public void testIterate() throws InterruptedException, ExecutionException,
 			IOException, COSVisitorException {
 
-		builder.iterate("^Reclama..o Traba.*", new File("/home/fabiano/"));
+		builder.iterate("^A..o Rescis.ria.*", new File("/home/fabiano/"));
 
 	}
 

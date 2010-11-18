@@ -75,8 +75,6 @@ public class DocumentBuilder {
 
 							PDDocument pddoc = PDDocument.load(file);
 
-							PDDocument newPddoc = new PDDocument();
-
 							PageExtractor extractor = new PageExtractor(pddoc);
 
 							try {
@@ -86,26 +84,24 @@ public class DocumentBuilder {
 
 								if (pdpages.size() == 0) {
 									return null;
-								}
+								} else {
 
-								boolean hasPage = false;
+									PDDocument newPddoc = new PDDocument();
 
-								for (PDPage pdpage : pdpages) {
-									if (pdpage != null) {
+									for (PDPage pdpage : pdpages) {
 										newPddoc.importPage(pdpage);
-										hasPage = true;
 									}
-								}
 
-								if (hasPage) {
 									OutputStream os = new FileOutputStream(
 											outputFile);
 
 									newPddoc.save(os);
-									newPddoc.close();
-								}
 
-								return pdpages;
+									newPddoc.close();
+
+									return pdpages;
+
+								}
 
 							} catch (Exception e) {
 

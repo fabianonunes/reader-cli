@@ -1,14 +1,18 @@
 package com.fabianonunes.reader.cli;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+import org.apache.commons.io.filefilter.FileFilterUtils;
+
 import com.fabianonunes.reader.storage.ReaderDocument;
 import com.fabianonunes.reader.tasks.PdfToImageTask;
 import com.fabianonunes.reader.tasks.PdfToXMLTask;
+import com.fabianonunes.reader.tasks.PgmToPngTask;
 import com.hazelcast.core.Hazelcast;
 import com.itextpdf.text.pdf.PdfReader;
 import com.ximpleware.EOFException;
@@ -23,13 +27,18 @@ public class Starter {
 
 	protected static File BASE_DIR = new File(System.getenv("PROCESSOS"));
 
+	private static FileFilter pgmFilter = FileFilterUtils
+			.suffixFileFilter(".pgm");
+
 	public static void main(String[] args) throws IOException,
 			EncodingException, EOFException, EntityException,
 			XPathParseException, NavException, XPathEvalException,
 			ParseException {
 
-		File pdfFile = new File(BASE_DIR, "1345100-28.2008.5.02.0000.pdf");
-		
+		String document = "1345100-28.2008.5.02.0000";
+
+		File pdfFile = new File(BASE_DIR, document + ".pdf");
+
 		PdfReader reader = new PdfReader(pdfFile.getAbsolutePath());
 
 		int numOfPages = reader.getNumberOfPages();
@@ -48,21 +57,27 @@ public class Starter {
 
 		for (int i = 0; i < iterations; i++) {
 
-			PdfToImageTask pdfTask = new PdfToImageTask(rdd);
-			pdfTask.setFirstPage(step * i + 1);
-			pdfTask.setTotalPages(step - 1);
-			pdfTask.setLastPage(numOfPages);
-
-			PdfToXMLTask xmlTask = new PdfToXMLTask(rdd);
+			PdfToXMLTask xmlTask = new PdfToXMLTask(document);
 			xmlTask.setFirstPage(step * i + 1);
 			xmlTask.setTotalPages(step - 1);
 			xmlTask.setLastPage(numOfPages);
 
-			Future<Integer> task = executor.submit(pdfTask);
 			Future<Integer> task2 = executor.submit(xmlTask);
 
-			tasks.add(task);
 			tasks.add(task2);
+
+		}
+
+		for (int i = 0; i < iterations; i++) {
+
+			PdfToImageTask pdfTask = new PdfToImageTask(document);
+			pdfTask.setFirstPage(step * i + 1);
+			pdfTask.setTotalPages(step - 1);
+			pdfTask.setLastPage(numOfPages);
+
+			Future<Integer> task = executor.submit(pdfTask);
+
+			tasks.add(task);
 
 		}
 
@@ -75,10 +90,6 @@ public class Starter {
 			}
 
 		}
-
-		executor.shutdown();
-
-		Hazelcast.getLifecycleService().shutdown();
 
 		// File dir = new File("/home/fabiano/workdir/converter/text");
 		//
@@ -97,27 +108,35 @@ public class Starter {
 		//
 		// filter = FileFilterUtils.suffixFileFilter(".pgm");
 		//
-		// File[] pgmFiles = imagesDir.listFiles(filter);
-		//
-		// tasks = new LinkedList<Future<Integer>>();
-		//
-		// for (File pgmImage : pgmFiles) {
-		//
-		// Future<Integer> task = executor.submit(new PgmToPngTask(pgmImage));
-		//
-		// tasks.add(task);
-		//
-		// }
-		//
-		// for (Future<Integer> future : tasks) {
-		//
-		// try {
-		// future.get();
-		// } catch (Exception e) {
-		// System.out.println("Error in: " + e.getMessage());
-		// }
-		//
-		// }
+
+		File[] pgmFiles = rdd.getImageFolder().listFiles(pgmFilter);
+
+		System.out.println(pgmFiles.length);
+
+		tasks = new LinkedList<Future<Integer>>();
+
+		for (File pgmImage : pgmFiles) {
+
+			Future<Integer> task = executor.submit(new PgmToPngTask(document,
+					pgmImage));
+
+			tasks.add(task);
+
+		}
+
+		for (Future<Integer> future : tasks) {
+
+			try {
+				future.get();
+			} catch (Exception e) {
+				System.out.println("Error in: " + e.getMessage());
+			}
+
+		}
+
+		executor.shutdown();
+
+		Hazelcast.getLifecycleService().shutdown();
 
 	}
 }

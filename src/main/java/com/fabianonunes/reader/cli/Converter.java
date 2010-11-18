@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -25,15 +26,14 @@ import com.itextpdf.text.pdf.PdfReader;
 public class Converter {
 
 	private FileFilter xmlFilter = FileFilterUtils.suffixFileFilter(".xml");
-	private FileFilter pgmFilter = FileFilterUtils.suffixFileFilter(".pgm");
-	private FileFilter pngFilter = FileFilterUtils.suffixFileFilter(".png");
+	public FileFilter pgmFilter = FileFilterUtils.suffixFileFilter(".pgm");
+	public FileFilter pngFilter = FileFilterUtils.suffixFileFilter(".png");
 	private static FileFilter pdfFilter = FileFilterUtils
 			.suffixFileFilter(".pdf");
 
 	public static void main(String[] args) throws Throwable {
 
-		File inputDir = new File(
-				"/media/TST02/Processos-Analysys/reclamacao-trabalhista");
+		File inputDir = new File("/media/TST02/Processos/Convert/");
 
 		File[] pdfFiles = inputDir.listFiles(pdfFilter);
 
@@ -41,9 +41,66 @@ public class Converter {
 
 			Converter c = new Converter();
 
-			c.convert(ReaderDocument.generateDocument(file));
+			ReaderDocument rdd = ReaderDocument.generateDocument(file);
+
+			c.convert(rdd);
 
 		}
+
+	}
+
+	public static void main2(String[] args) throws Throwable {
+
+		File inputDir = new File("/media/TST02/Processos-Analysys/40-100");
+		File indexDir = new File("/media/TST02/Processos-Analysys/40-100/index");
+		indexDir.mkdir();
+
+		File[] rddFiles = inputDir.listFiles();
+
+		final BatchIndexer indexer = new BatchIndexer(indexDir);
+
+		ExecutorService executor = Executors.newFixedThreadPool(1);
+
+		LinkedList<Future<String>> tasks = new LinkedList<Future<String>>();
+
+		for (final File file : rddFiles) {
+
+			Future<String> future = executor.submit(new Callable<String>() {
+
+				@Override
+				public String call() throws Exception {
+
+					ReaderDocument rdd = new ReaderDocument(file);
+
+					if (rdd.getFullText().exists()) {
+
+						indexer.index(rdd.getFullText(), rdd.getFolder()
+								.getName());
+
+					}
+
+					return null;
+				}
+			});
+
+			tasks.add(future);
+
+		}
+
+		for (Future<String> future : tasks) {
+
+			try {
+				future.get();
+			} catch (Exception e) {
+				System.out.println("Error in: " + e.getMessage());
+				e.printStackTrace();
+			}
+
+		}
+
+		indexer.close();
+
+		executor.shutdown();
 
 	}
 
@@ -72,15 +129,19 @@ public class Converter {
 			pdfTask.setTotalPages(step - 1);
 			pdfTask.setLastPage(numOfPages);
 
+			Future<Integer> task = executor.submit(pdfTask);
+			tasks.add(task);
+
+		}
+
+		for (int i = 0; i < iterations; i++) {
+
 			PdfToXMLTask xmlTask = new PdfToXMLTask(document);
 			xmlTask.setFirstPage(step * i + 1);
 			xmlTask.setTotalPages(step - 1);
 			xmlTask.setLastPage(numOfPages);
 
-			Future<Integer> task = executor.submit(pdfTask);
 			Future<Integer> task2 = executor.submit(xmlTask);
-
-			tasks.add(task);
 			tasks.add(task2);
 
 		}
@@ -107,36 +168,34 @@ public class Converter {
 
 		File[] pgmFiles = document.getImageFolder().listFiles(pgmFilter);
 
-		executor = Executors.newFixedThreadPool(4);
+		executor = Executors.newFixedThreadPool(8);
 
 		tasks = new LinkedList<Future<Integer>>();
 
 		for (File pgmImage : pgmFiles) {
 
-			Future<Integer> task = executor.submit(new PgmToPngTask(pgmImage));
+			Future<Integer> task = executor.submit(new PgmToPngTask(document,
+					pgmImage));
 
 			tasks.add(task);
 
 		}
 
 		for (Future<Integer> future : tasks) {
-
 			try {
 				future.get();
 			} catch (Exception e) {
 				System.out.println("Error in: " + e.getMessage());
 				e.printStackTrace();
 			}
-
 		}
-
 		executor.shutdown();
 
 		File[] pngFiles = document.getImageFolder().listFiles(pngFilter);
+
 		File[] thumbsFiles = document.getThumbsFolder().listFiles(pngFilter);
 
 		List<File> pngs = new ArrayList<File>();
-
 		pngs.addAll(Arrays.asList(pngFiles));
 		pngs.addAll(Arrays.asList(thumbsFiles));
 
@@ -146,14 +205,19 @@ public class Converter {
 					.replaceAll("p-0*", ""));
 
 			pngFile.renameTo(toFile);
-
 		}
 
 		FileUtils.cleanDirectory(document.getIndexFolder());
 
+		try {
+			document.extractData();
+		} catch (Exception e) {
+			// queitly
+		}
+
 		BatchIndexer indexer = new BatchIndexer(document.getIndexFolder());
 
-		indexer.index(document.getFullText());
+		indexer.index(document.getFullText(), document.getFolder().getName());
 		indexer.close();
 
 	}
