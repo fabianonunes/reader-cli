@@ -1,6 +1,7 @@
 package com.fabianonunes.reader.tasks;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
 import java.security.InvalidParameterException;
 import java.util.concurrent.Callable;
@@ -15,12 +16,17 @@ public class PdfToXMLTask implements Callable<Integer>, Serializable {
 	private Integer firstPage;
 	private Integer totalPages;
 	private Integer lastPage;
-	private ReaderDocument rdd;
+
+	private File rddFolder;
 
 	public PdfToXMLTask(ReaderDocument document) {
 
-		this.rdd = document;
+		rddFolder = document.getFolder();
 
+	}
+
+	public PdfToXMLTask(File folder) throws IOException {
+		rddFolder = folder;
 	}
 
 	public Integer getFirstPage() {
@@ -50,11 +56,15 @@ public class PdfToXMLTask implements Callable<Integer>, Serializable {
 	@Override
 	public Integer call() throws Exception {
 
-		File pdfFile = rdd.getPdf();
-
-		File outputDir = rdd.getTextFolder();
-
 		System.out.println("xml");
+
+		System.out.println(rddFolder);
+
+		ReaderDocument document = new ReaderDocument(rddFolder);
+
+		File pdfFile = document.getPdf();
+
+		File outputDir = document.getTextFolder();
 
 		if (firstPage == null || lastPage == null || totalPages == null) {
 			throw new InvalidParameterException();
@@ -115,5 +125,4 @@ public class PdfToXMLTask implements Callable<Integer>, Serializable {
 
 	}
 
-	
 }

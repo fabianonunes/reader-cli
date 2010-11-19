@@ -17,11 +17,11 @@ public class PgmToPngTask implements Callable<Integer>, Serializable {
 
 	private String pgmFileName;
 
-	private ReaderDocument rdd;
+	private File imageFolder;
 
 	public PgmToPngTask(ReaderDocument document, File pgmImage) {
 
-		this.rdd = document;
+		this.imageFolder = document.getImageFolder();
 
 		this.pgmFileName = pgmImage.getName();
 
@@ -30,7 +30,7 @@ public class PgmToPngTask implements Callable<Integer>, Serializable {
 	@Override
 	public Integer call() throws Exception {
 
-		File pgmFile = new File(rdd.getImageFolder(), pgmFileName);
+		File pgmFile = new File(imageFolder, pgmFileName);
 
 		System.out.println("Converting " + pgmFile.getName() + "...");
 
