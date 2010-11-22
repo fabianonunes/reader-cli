@@ -12,6 +12,8 @@ import org.apache.commons.io.filefilter.FileFilterUtils;
 
 import com.fabianonunes.reader.storage.ReaderDocument;
 import com.fabianonunes.reader.tasks.PdfToXMLTask;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.FileSystemXmlConfig;
 import com.hazelcast.core.Hazelcast;
 import com.itextpdf.text.pdf.PdfReader;
 import com.ximpleware.EOFException;
@@ -34,9 +36,14 @@ public class Starter {
 			XPathParseException, NavException, XPathEvalException,
 			ParseException, InterruptedException {
 
+		Config cfg = new FileSystemXmlConfig(new File(
+				"/home/fabiano/grid/hazelcast-1.9/bin/hazelcast.xml"));
+
+		Hazelcast.init(cfg);
+
 		ExecutorService executor = Hazelcast.getExecutorService();
 
-//		Thread.sleep(400000);
+		Thread.sleep(4000);
 
 		String document = "t1";
 
@@ -60,7 +67,8 @@ public class Starter {
 
 		for (int i = 0; i < iterations; i++) {
 
-			PdfToXMLTask xmlTask = new PdfToXMLTask(rdd.getFolder());
+			PdfToXMLTask xmlTask = new PdfToXMLTask(rdd.getFolder()
+					.getAbsolutePath());
 			xmlTask.setFirstPage(step * i + 1);
 			xmlTask.setTotalPages(step - 1);
 			xmlTask.setLastPage(numOfPages);

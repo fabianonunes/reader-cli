@@ -108,7 +108,7 @@ public class Converter {
 
 		File pdfFile = document.getPdf();
 
-		ExecutorService executor = Executors.newFixedThreadPool(10);
+		ExecutorService executor = Executors.newFixedThreadPool(12);
 
 		LinkedList<Future<Integer>> tasks = new LinkedList<Future<Integer>>();
 

@@ -19,6 +19,8 @@ public class PdfToXMLTask implements Callable<Integer>, Serializable {
 
 	private File rddFolder;
 
+	private String path;
+
 	public PdfToXMLTask(ReaderDocument document) {
 
 		rddFolder = document.getFolder();
@@ -27,6 +29,10 @@ public class PdfToXMLTask implements Callable<Integer>, Serializable {
 
 	public PdfToXMLTask(File folder) throws IOException {
 		rddFolder = folder;
+	}
+
+	public PdfToXMLTask(String absolutePath) {
+		this.path = absolutePath;
 	}
 
 	public Integer getFirstPage() {
@@ -57,6 +63,10 @@ public class PdfToXMLTask implements Callable<Integer>, Serializable {
 	public Integer call() throws Exception {
 
 		System.out.println("xml");
+
+		if (this.path != null) {
+			rddFolder = new File(path);
+		}
 
 		System.out.println(rddFolder);
 
