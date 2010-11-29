@@ -22,7 +22,7 @@ public class PdfToXMLTask implements Callable<Integer>, Serializable {
 	private String path;
 
 	public PdfToXMLTask(ReaderDocument document) {
-
+		
 		rddFolder = document.getFolder();
 
 	}
@@ -62,13 +62,11 @@ public class PdfToXMLTask implements Callable<Integer>, Serializable {
 	@Override
 	public Integer call() throws Exception {
 
-		System.out.println("xml");
+		System.out.print(".");
 
 		if (this.path != null) {
 			rddFolder = new File(path);
 		}
-
-		System.out.println(rddFolder);
 
 		ReaderDocument document = new ReaderDocument(rddFolder);
 
@@ -121,6 +119,19 @@ public class PdfToXMLTask implements Callable<Integer>, Serializable {
 		p.waitFor();
 
 		p.destroy();
+		
+		try {
+			p.getErrorStream().close();
+		} catch (Exception e) {
+			// quietly
+		}
+		
+		try {
+			p.getInputStream().close();
+		} catch (Exception e) {
+			// quietly
+		}
+
 
 		command = "tidy -utf8 -xml -w 255 -i -c -q -asxml -o "
 				+ output.getAbsolutePath() + " " + output.getAbsolutePath();
@@ -130,6 +141,19 @@ public class PdfToXMLTask implements Callable<Integer>, Serializable {
 		p.waitFor();
 
 		p.destroy();
+		
+		try {
+			p.getErrorStream().close();
+		} catch (Exception e) {
+			// quietly
+		}
+		
+		try {
+			p.getInputStream().close();
+		} catch (Exception e) {
+			// quietly
+		}
+
 
 		return null;
 

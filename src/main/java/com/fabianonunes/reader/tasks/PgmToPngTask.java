@@ -32,7 +32,7 @@ public class PgmToPngTask implements Callable<Integer>, Serializable {
 
 		File pgmFile = new File(imageFolder, pgmFileName);
 
-		System.out.println("Converting " + pgmFile.getName() + "...");
+		System.out.print(".");
 
 		if (pgmFile == null || !pgmFile.isFile()) {
 			throw new InvalidParameterException();
@@ -53,18 +53,30 @@ public class PgmToPngTask implements Callable<Integer>, Serializable {
 
 		Process p = runtime.exec(command);
 
-		StreamGobbler errorGobbler = new StreamGobbler(p.getErrorStream(),
-				"ERROR");
-
-		StreamGobbler outputGobbler = new StreamGobbler(p.getInputStream(),
-				"OUTPUT");
-
-		errorGobbler.start();
-		outputGobbler.start();
+		// StreamGobbler errorGobbler = new StreamGobbler(p.getErrorStream(),
+		// "ERROR");
+		//
+		// StreamGobbler outputGobbler = new StreamGobbler(p.getInputStream(),
+		// "OUTPUT");
+		//
+		// errorGobbler.start();
+		// outputGobbler.start();
 
 		p.waitFor();
 
 		p.destroy();
+		
+		try {
+			p.getErrorStream().close();
+		} catch (Exception e) {
+			// quietly
+		}
+		
+		try {
+			p.getInputStream().close();
+		} catch (Exception e) {
+			// quietly
+		}
 
 		FileUtils.deleteQuietly(pgmFile);
 
@@ -76,6 +88,19 @@ public class PgmToPngTask implements Callable<Integer>, Serializable {
 		p.waitFor();
 
 		p.destroy();
+		
+		try {
+			p.getErrorStream().close();
+		} catch (Exception e) {
+			// quietly
+		}
+		
+		try {
+			p.getInputStream().close();
+		} catch (Exception e) {
+			// quietly
+		}
+
 
 		return null;
 

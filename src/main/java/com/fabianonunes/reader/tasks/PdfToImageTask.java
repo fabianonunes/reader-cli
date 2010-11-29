@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.security.InvalidParameterException;
-import java.util.Date;
 import java.util.concurrent.Callable;
 
 import com.fabianonunes.reader.storage.ReaderDocument;
@@ -64,7 +63,7 @@ public class PdfToImageTask implements Callable<Integer>, Serializable {
 			throw new InvalidParameterException();
 		}
 
-		System.out.println(new Date());
+		System.out.print(".");
 
 		Integer lastPage = Math.min(this.lastPage, (firstPage + totalPages));
 
@@ -79,6 +78,18 @@ public class PdfToImageTask implements Callable<Integer>, Serializable {
 
 		p.waitFor();
 		p.destroy();
+
+		try {
+			p.getErrorStream().close();
+		} catch (Exception e) {
+			// quietly
+		}
+
+		try {
+			p.getInputStream().close();
+		} catch (Exception e) {
+			// quietly
+		}
 
 		return null;
 

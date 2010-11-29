@@ -2,24 +2,33 @@ package com.fabianonunes.reader.cli;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.TreeMap;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import net.sf.json.JSONObject;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
+import org.jdom.output.Format;
+import org.jdom.output.XMLOutputter;
 
-import com.fabianonunes.reader.CLIActions;
+import com.fabianonunes.reader.pdf.outline.OutlineHandler;
+import com.fabianonunes.reader.pdf.text.position.OptiXML;
+import com.fabianonunes.reader.pdf.text.position.SimpleXML;
 import com.fabianonunes.reader.storage.ReaderDocument;
 import com.fabianonunes.reader.tasks.PdfToImageTask;
 import com.fabianonunes.reader.tasks.PdfToXMLTask;
 import com.fabianonunes.reader.tasks.PgmToPngTask;
 import com.fabianonunes.reader.tasks.XmlAssembler;
+import com.fabianonunes.reader.text.classification.Classifier;
 import com.fabianonunes.reader.text.index.BatchIndexer;
 import com.itextpdf.text.pdf.PdfReader;
 
@@ -30,6 +39,9 @@ public class Converter {
 	public FileFilter pngFilter = FileFilterUtils.suffixFileFilter(".png");
 	private static FileFilter pdfFilter = FileFilterUtils
 			.suffixFileFilter(".pdf");
+
+	private static File rulesFolder = new File(
+			"/home/fabiano/workdir/reader-tests/rules");
 
 	public static void main(String[] args) throws Throwable {
 
@@ -44,6 +56,10 @@ public class Converter {
 			ReaderDocument rdd = ReaderDocument.generateDocument(file);
 
 			c.convert(rdd);
+
+			c = null;
+
+			System.gc();
 
 		}
 
@@ -104,11 +120,11 @@ public class Converter {
 
 	}
 
-	public void convert(ReaderDocument document) throws Throwable {
+	public void convert(final ReaderDocument document) throws Throwable {
 
 		File pdfFile = document.getPdf();
 
-		ExecutorService executor = Executors.newFixedThreadPool(12);
+		ExecutorService executor = Executors.newFixedThreadPool(4);
 
 		LinkedList<Future<Integer>> tasks = new LinkedList<Future<Integer>>();
 
@@ -118,10 +134,11 @@ public class Converter {
 
 		reader.close();
 
-		Integer iterations = new Double(Math.ceil(numOfPages / 10f)).intValue();
+		Integer iterations = new Double(Math.ceil(numOfPages / 8f)).intValue();
 
-		Integer step = 10;
+		Integer step = 8;
 
+		System.out.println("Converting pdf to images...");
 		for (int i = 0; i < iterations; i++) {
 
 			PdfToImageTask pdfTask = new PdfToImageTask(document);
@@ -134,6 +151,7 @@ public class Converter {
 
 		}
 
+		System.out.println("Converting pdf to xml...");
 		for (int i = 0; i < iterations; i++) {
 
 			PdfToXMLTask xmlTask = new PdfToXMLTask(document);
@@ -159,18 +177,50 @@ public class Converter {
 
 		executor.shutdown();
 
-		File[] files = document.getTextFolder().listFiles(xmlFilter);
+		executor = Executors.newSingleThreadExecutor();
 
-		XmlAssembler.assemble(files, document.getFullText(), "//PAGE");
+		final File[] files = document.getTextFolder().listFiles(xmlFilter);
 
-		CLIActions.simpleXML(document.getFullText());
-		CLIActions.optimizeXML(document.getFullText());
+		Future<Integer> xmlTasks = executor.submit(new Callable<Integer>() {
+
+			@Override
+			public Integer call() throws Exception {
+
+				XmlAssembler.assemble(files, document.getFullText(), "//PAGE");
+
+				// simple-xml
+				File fullFile = document.getFullText();
+				SimpleXML xmlt = new SimpleXML(fullFile);
+				xmlt.convert();
+				XMLOutputter outputter = new XMLOutputter(Format.getPrettyFormat());
+				FileWriter w = new FileWriter(
+						new File(fullFile.getParentFile(), "text.xml").getAbsolutePath());
+				outputter.output(xmlt.getDoc(), w);
+				xmlt.resetDocument();
+				xmlt = null;
+				w.close();
+				
+				//opti-xml
+				OptiXML opti = new OptiXML(fullFile);
+				opti.optimize();
+				opti = null;
+
+				return null;
+			}
+
+		});
+
+		xmlTasks.get();
+
+		executor.shutdown();
+
+		executor = Executors.newFixedThreadPool(4);
 
 		File[] pgmFiles = document.getImageFolder().listFiles(pgmFilter);
 
-		executor = Executors.newFixedThreadPool(8);
-
 		tasks = new LinkedList<Future<Integer>>();
+
+		System.out.println("Converting pgm to png...");
 
 		for (File pgmImage : pgmFiles) {
 
@@ -209,16 +259,28 @@ public class Converter {
 
 		FileUtils.cleanDirectory(document.getIndexFolder());
 
+		BatchIndexer indexer = new BatchIndexer(document.getIndexFolder());
+
+		indexer.index(document.getFullText(), document.getFolder().getName());
+		indexer.close();
+
+		// Auto indexing
+		FileFilter filter = FileFilterUtils.suffixFileFilter(".xml");
+		File[] rules = rulesFolder.listFiles(filter);
+		Classifier c = new Classifier(document.getIndexFolder());
+		TreeMap<String, List<Integer>> results = c.analyze(rules);
+		c.close();
+
+		OutlineHandler outline = new OutlineHandler(results);
+		JSONObject data = new JSONObject();
+		data.put("children", outline.getRoot());
+		document.saveData(data.toString());
+
 		try {
 			document.extractData();
 		} catch (Exception e) {
 			// queitly
 		}
-
-		BatchIndexer indexer = new BatchIndexer(document.getIndexFolder());
-
-		indexer.index(document.getFullText(), document.getFolder().getName());
-		indexer.close();
 
 	}
 
