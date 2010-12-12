@@ -62,8 +62,6 @@ public class PdfToXMLTask implements Callable<Integer>, Serializable {
 	@Override
 	public Integer call() throws Exception {
 
-		System.out.print(".");
-
 		if (this.path != null) {
 			rddFolder = new File(path);
 		}

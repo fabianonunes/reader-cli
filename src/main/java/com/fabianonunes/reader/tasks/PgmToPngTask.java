@@ -32,8 +32,6 @@ public class PgmToPngTask implements Callable<Integer>, Serializable {
 
 		File pgmFile = new File(imageFolder, pgmFileName);
 
-		System.out.print(".");
-
 		if (pgmFile == null || !pgmFile.isFile()) {
 			throw new InvalidParameterException();
 		}

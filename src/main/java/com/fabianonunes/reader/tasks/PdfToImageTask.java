@@ -63,8 +63,6 @@ public class PdfToImageTask implements Callable<Integer>, Serializable {
 			throw new InvalidParameterException();
 		}
 
-		System.out.print(".");
-
 		Integer lastPage = Math.min(this.lastPage, (firstPage + totalPages));
 
 		String command = "pdftoppm -r 300" + //

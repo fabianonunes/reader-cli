@@ -12,6 +12,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import net.sf.json.JSONObject;
 
@@ -30,7 +31,9 @@ import com.fabianonunes.reader.tasks.PgmToPngTask;
 import com.fabianonunes.reader.tasks.XmlAssembler;
 import com.fabianonunes.reader.text.classification.Classifier;
 import com.fabianonunes.reader.text.index.BatchIndexer;
+import com.fabianonunes.reader.text.index.Indexer;
 import com.itextpdf.text.pdf.PdfReader;
+import com.itextpdf.text.pdf.RandomAccessFileOrArray;
 
 public class Converter {
 
@@ -46,6 +49,8 @@ public class Converter {
 	public static void main(String[] args) throws Throwable {
 
 		File inputDir = new File("/media/TST02/Processos/Convert/");
+
+		inputDir = new File("/home/fabiano/workdir/converter");
 
 		File[] pdfFiles = inputDir.listFiles(pdfFilter);
 
@@ -127,8 +132,10 @@ public class Converter {
 		ExecutorService executor = Executors.newFixedThreadPool(4);
 
 		LinkedList<Future<Integer>> tasks = new LinkedList<Future<Integer>>();
+		
+		RandomAccessFileOrArray raf = new RandomAccessFileOrArray(pdfFile.getAbsolutePath());
 
-		PdfReader reader = new PdfReader(pdfFile.getAbsolutePath());
+		PdfReader reader = new PdfReader(raf, null);
 
 		int numOfPages = reader.getNumberOfPages();
 
@@ -177,6 +184,10 @@ public class Converter {
 
 		executor.shutdown();
 
+		executor.awaitTermination(3, TimeUnit.MINUTES);
+		
+		System.gc();
+
 		executor = Executors.newSingleThreadExecutor();
 
 		final File[] files = document.getTextFolder().listFiles(xmlFilter);
@@ -192,15 +203,16 @@ public class Converter {
 				File fullFile = document.getFullText();
 				SimpleXML xmlt = new SimpleXML(fullFile);
 				xmlt.convert();
-				XMLOutputter outputter = new XMLOutputter(Format.getPrettyFormat());
-				FileWriter w = new FileWriter(
-						new File(fullFile.getParentFile(), "text.xml").getAbsolutePath());
+				XMLOutputter outputter = new XMLOutputter(Format
+						.getPrettyFormat());
+				FileWriter w = new FileWriter(new File(
+						fullFile.getParentFile(), "text.xml").getAbsolutePath());
 				outputter.output(xmlt.getDoc(), w);
 				xmlt.resetDocument();
 				xmlt = null;
 				w.close();
-				
-				//opti-xml
+
+				// opti-xml
 				OptiXML opti = new OptiXML(fullFile);
 				opti.optimize();
 				opti = null;
@@ -213,6 +225,10 @@ public class Converter {
 		xmlTasks.get();
 
 		executor.shutdown();
+
+		executor.awaitTermination(3, TimeUnit.MINUTES);
+		
+		System.gc();
 
 		executor = Executors.newFixedThreadPool(4);
 
@@ -241,6 +257,10 @@ public class Converter {
 		}
 		executor.shutdown();
 
+		executor.awaitTermination(3, TimeUnit.MINUTES);
+		
+		System.gc();
+
 		File[] pngFiles = document.getImageFolder().listFiles(pngFilter);
 
 		File[] thumbsFiles = document.getThumbsFolder().listFiles(pngFilter);
@@ -259,27 +279,34 @@ public class Converter {
 
 		FileUtils.cleanDirectory(document.getIndexFolder());
 
-		BatchIndexer indexer = new BatchIndexer(document.getIndexFolder());
+		Indexer indexer = new Indexer(document.getIndexFolder(), document
+				.getFolder().getName());
 
-		indexer.index(document.getFullText(), document.getFolder().getName());
+		indexer.indexXMLFile(document.getOptiText());
+
 		indexer.close();
 
 		// Auto indexing
 		FileFilter filter = FileFilterUtils.suffixFileFilter(".xml");
 		File[] rules = rulesFolder.listFiles(filter);
-		Classifier c = new Classifier(document.getIndexFolder());
-		TreeMap<String, List<Integer>> results = c.analyze(rules);
-		c.close();
 
-		OutlineHandler outline = new OutlineHandler(results);
-		JSONObject data = new JSONObject();
-		data.put("children", outline.getRoot());
-		document.saveData(data.toString());
+		if (rules != null) {
+			
+			Classifier c = new Classifier(document.getIndexFolder());
+			TreeMap<String, List<Integer>> results = c.analyze(rules);
+			c.close();
 
-		try {
-			document.extractData();
-		} catch (Exception e) {
-			// queitly
+			OutlineHandler outline = new OutlineHandler(results);
+			JSONObject data = new JSONObject();
+			data.put("children", outline.getRoot());
+			document.saveData(data.toString());
+
+			try {
+				document.extractData();
+			} catch (Exception e) {
+				// queitly
+			}
+
 		}
 
 	}
