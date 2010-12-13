@@ -50,7 +50,7 @@ public class Converter {
 
 		File inputDir = new File("/media/TST02/Processos/Convert/");
 
-		inputDir = new File("/home/fabiano/workdir/converter");
+		// inputDir = new File("/home/fabiano/workdir/converter");
 
 		File[] pdfFiles = inputDir.listFiles(pdfFilter);
 
@@ -132,8 +132,9 @@ public class Converter {
 		ExecutorService executor = Executors.newFixedThreadPool(4);
 
 		LinkedList<Future<Integer>> tasks = new LinkedList<Future<Integer>>();
-		
-		RandomAccessFileOrArray raf = new RandomAccessFileOrArray(pdfFile.getAbsolutePath());
+
+		RandomAccessFileOrArray raf = new RandomAccessFileOrArray(
+				pdfFile.getAbsolutePath());
 
 		PdfReader reader = new PdfReader(raf, null);
 
@@ -185,7 +186,7 @@ public class Converter {
 		executor.shutdown();
 
 		executor.awaitTermination(3, TimeUnit.MINUTES);
-		
+
 		System.gc();
 
 		executor = Executors.newSingleThreadExecutor();
@@ -227,7 +228,7 @@ public class Converter {
 		executor.shutdown();
 
 		executor.awaitTermination(3, TimeUnit.MINUTES);
-		
+
 		System.gc();
 
 		executor = Executors.newFixedThreadPool(4);
@@ -258,7 +259,7 @@ public class Converter {
 		executor.shutdown();
 
 		executor.awaitTermination(3, TimeUnit.MINUTES);
-		
+
 		System.gc();
 
 		File[] pngFiles = document.getImageFolder().listFiles(pngFilter);
@@ -291,7 +292,7 @@ public class Converter {
 		File[] rules = rulesFolder.listFiles(filter);
 
 		if (rules != null) {
-			
+
 			Classifier c = new Classifier(document.getIndexFolder());
 			TreeMap<String, List<Integer>> results = c.analyze(rules);
 			c.close();
