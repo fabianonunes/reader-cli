@@ -31,7 +31,7 @@ public class Starter {
 	public static FileFilter pgmFilter = FileFilterUtils
 			.suffixFileFilter(".pgm");
 
-	public static void main(String[] args) throws IOException,
+	public static void main4(String[] args) throws IOException,
 			EncodingException, EOFException, EntityException,
 			XPathParseException, NavException, XPathEvalException,
 			ParseException, InterruptedException {

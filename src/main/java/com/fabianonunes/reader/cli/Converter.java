@@ -46,7 +46,7 @@ public class Converter {
 	private static File rulesFolder = new File(
 			"/home/fabiano/workdir/reader-tests/rules");
 
-	public static void main(String[] args) throws Throwable {
+	public static void main3(String[] args) throws Throwable {
 
 		File inputDir = new File("/media/TST02/Processos/Convert/");
 
