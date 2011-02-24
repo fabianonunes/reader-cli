@@ -1,8 +1,22 @@
 package com.fabianonunes.reader.cli;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.TransformerFactoryConfigurationError;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.transform.stream.StreamSource;
+
+import net.sf.json.xml.XMLSerializer;
+
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringEscapeUtils;
 
 import com.ximpleware.AutoPilot;
@@ -23,14 +37,16 @@ public class Modifier {
 
 	public static void main(String[] args) throws ModifyException,
 			NavException, TranscodeException, FileNotFoundException,
-			XPathParseException, XPathEvalException, IOException {
+			XPathParseException, XPathEvalException, IOException,
+			TransformerFactoryConfigurationError, TransformerException {
 		Modifier m = new Modifier();
 		m.exec();
 	}
 
 	public void exec() throws ModifyException, NavException,
 			TranscodeException, FileNotFoundException, IOException,
-			XPathParseException, XPathEvalException {
+			XPathParseException, XPathEvalException,
+			TransformerFactoryConfigurationError, TransformerException {
 
 		VTDGen vg = new VTDGen(); // Instantiate VTDGen
 
@@ -41,7 +57,7 @@ public class Modifier {
 			nav = vg.getNav();
 
 			xm.bind(nav);
-			
+
 			xm.updateElementName("full");
 
 			ap = new AutoPilot(nav);
@@ -65,7 +81,7 @@ public class Modifier {
 				removeAttr("height");
 
 				removeAttr("id");
-				
+
 				ap.selectAttr("number");
 				t = ap.iterateAttr();
 
@@ -150,7 +166,22 @@ public class Modifier {
 
 			vg.clear();
 
-			xm.output(System.out);
+			ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+			xm.output(baos);
+
+			XMLSerializer s = new XMLSerializer();
+
+			Transformer tr = TransformerFactory.newInstance().newTransformer();
+
+			tr.setOutputProperty(OutputKeys.INDENT, "yes");
+
+			ByteArrayInputStream is = new ByteArrayInputStream(
+					baos.toByteArray());
+
+			tr.transform(new StreamSource(is), new StreamResult(System.out));
+
+			// s.re
 
 		}
 
