@@ -29,7 +29,9 @@ import com.fabianonunes.reader.text.classification.Classifier;
 import com.ximpleware.EOFException;
 import com.ximpleware.EncodingException;
 import com.ximpleware.EntityException;
+import com.ximpleware.ModifyException;
 import com.ximpleware.NavException;
+import com.ximpleware.TranscodeException;
 import com.ximpleware.XPathEvalException;
 import com.ximpleware.XPathParseException;
 
@@ -127,7 +129,8 @@ public class CLIActions {
 	public static void optimizeXML(File file) throws EncodingException,
 			EOFException, EntityException, NumberFormatException,
 			com.ximpleware.ParseException, XPathParseException,
-			XPathEvalException, NavException, IOException {
+			XPathEvalException, NavException, IOException, ModifyException,
+			TranscodeException {
 
 		OptiXML opti = new OptiXML(file);
 
