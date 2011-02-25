@@ -5,6 +5,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.output.ByteArrayOutputStream;
 
 import com.ximpleware.AutoPilot;
 import com.ximpleware.EOFException;
@@ -28,8 +30,10 @@ public class XmlAssembler {
 		VTDGen vg;
 
 		FileUtils.deleteQuietly(output);
-
+		
 		FileOutputStream fos = new FileOutputStream(output);
+
+		ByteArrayOutputStream os = new ByteArrayOutputStream();
 
 		AutoPilot ap = new AutoPilot();
 
@@ -37,7 +41,7 @@ public class XmlAssembler {
 
 		ap.selectXPath(query);
 
-		fos.write("<DOCUMENT>\n".getBytes());
+		os.write("<DOCUMENT>\n".getBytes());
 
 		for (File file : files) {
 
@@ -61,9 +65,9 @@ public class XmlAssembler {
 
 			for (int k = 0; k < size; k++) {
 
-				fos.write("\n".getBytes());
+				os.write("\n".getBytes());
 
-				fos.write(xml, flb.lower32At(k), flb.upper32At(k));
+				os.write(xml, flb.lower32At(k), flb.upper32At(k));
 
 			}
 
@@ -73,8 +77,12 @@ public class XmlAssembler {
 
 		}
 
-		fos.write("\n</DOCUMENT>".getBytes());
+		os.write("\n</DOCUMENT>".getBytes());
 
+		os.close();
+		
+		IOUtils.write(os.toByteArray(), fos);
+		
 		fos.close();
 
 		for (File file : files) {

@@ -47,7 +47,7 @@ public class Converter {
 
 		File inputDir = new File("/media/TST02/Processos/Convert");
 
-		inputDir = new File("/home/fabiano/workdir/converter");
+		// inputDir = new File("/home/fabiano/workdir/converter");
 
 		File[] pdfFiles = inputDir.listFiles(pdfFilter);
 
@@ -193,42 +193,12 @@ public class Converter {
 
 		//
 
-		executor = Executors.newSingleThreadExecutor();
+		File fullFile = document.getFullText();
 
-		Future<Integer> xmlTasks = executor.submit(new Callable<Integer>() {
+		OptiXML opti = new OptiXML(fullFile);
+		opti.optimize();
 
-			@Override
-			public Integer call() throws Exception {
-
-				File fullFile = document.getFullText();
-
-				// simple-xml
-				// SimpleXML xmlt = new SimpleXML(fullFile);
-				// xmlt.convert();
-				// XMLOutputter outputter = new XMLOutputter(Format
-				// .getPrettyFormat());
-				// FileWriter w = new FileWriter(new File(
-				// fullFile.getParentFile(), "text.xml").getAbsolutePath());
-				// outputter.output(xmlt.getDoc(), w);
-				// xmlt.resetDocument();
-				// xmlt = null;
-				// w.close();
-
-				// opti-xml
-				OptiXML opti = new OptiXML(fullFile);
-				opti.optimize();
-
-				return null;
-
-			}
-
-		});
-
-		xmlTasks.get();
-
-		executor.shutdown();
-
-		executor.awaitTermination(3, TimeUnit.MINUTES);
+		//
 
 		File[] pngFiles = document.getImageFolder().listFiles(pngFilter);
 
