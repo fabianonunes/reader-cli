@@ -5,19 +5,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.TransformerFactoryConfigurationError;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.transform.stream.StreamSource;
 
-import net.sf.json.xml.XMLSerializer;
-
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringEscapeUtils;
+import org.w3c.tidy.Tidy;
 
 import com.ximpleware.AutoPilot;
 import com.ximpleware.ModifyException;
@@ -170,16 +162,34 @@ public class Modifier {
 
 			xm.output(baos);
 
-			XMLSerializer s = new XMLSerializer();
-
-			Transformer tr = TransformerFactory.newInstance().newTransformer();
-
-			tr.setOutputProperty(OutputKeys.INDENT, "yes");
+			// XMLSerializer s = new XMLSerializer();
+			//
+			// Transformer tr =
+			// TransformerFactory.newInstance().newTransformer();
+			//
+			// tr.setOutputProperty(OutputKeys.INDENT, "yes");
 
 			ByteArrayInputStream is = new ByteArrayInputStream(
 					baos.toByteArray());
+			
+			Tidy tidy = new Tidy();
+			
+			tidy.setXmlTags(true);
+			tidy.setXmlOut(true);
+			tidy.setWraplen(255);
+			tidy.setMakeClean(true);
+			tidy.setInputEncoding("utf-8");
+			tidy.setIndentContent(true);
+			tidy.setQuiet(true);
+			tidy.setForceOutput(true);
+			
+			tidy.parse(is, System.out);
+			
+			
+			//-utf8 -xml -w 255 -i -c -q -asxml -o "+ output.getAbsolutePath() + " " + output.getAbsolutePath();
+			
 
-			tr.transform(new StreamSource(is), new StreamResult(System.out));
+			// tr.transform(new StreamSource(is), new StreamResult(System.out));
 
 			// s.re
 
