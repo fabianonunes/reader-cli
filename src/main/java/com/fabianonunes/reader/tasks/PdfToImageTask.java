@@ -12,7 +12,6 @@ import org.apache.commons.exec.DefaultExecuteResultHandler;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.exec.Executor;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 
 import com.fabianonunes.reader.storage.ReaderDocument;
@@ -75,7 +74,7 @@ public class PdfToImageTask implements Callable<Integer>, Serializable {
 		String command = "pdftoppm -r 300" + //
 				" -f " + firstPage + //
 				" -l " + lastPage + //
-				" -gray -scale-to 1000 " + //
+				" -png -scale-to 1000 " + //
 				pdfFile.getAbsolutePath() + //
 				" " + outputDir.getAbsolutePath() + "/p";
 
@@ -92,7 +91,7 @@ public class PdfToImageTask implements Callable<Integer>, Serializable {
 
 		Integer lastPage = Math.min(this.lastPage, (firstPage + totalPages));
 
-		ArrayList<File> pgmFiles = new ArrayList<File>();
+		ArrayList<File> rawFiles = new ArrayList<File>();
 
 		Double chars = Math.floor(Math.log10(this.lastPage.doubleValue())) + 1;
 
@@ -101,41 +100,33 @@ public class PdfToImageTask implements Callable<Integer>, Serializable {
 			String name = StringUtils.leftPad(Integer.toString(i),
 					chars.intValue(), "0");
 
-			pgmFiles.add(new File(outputDir, "p-" + name + ".pgm"));
+			rawFiles.add(new File(outputDir, "p-" + name + ".png"));
 
 		}
 
-		for (File pgmFile : pgmFiles) {
+		for (File rawFile : rawFiles) {
 
-			if (pgmFile == null || !pgmFile.isFile()) {
-				System.out.println(pgmFile);
+			if (rawFile == null || !rawFile.isFile()) {
+				System.out.println(rawFile);
 				throw new InvalidParameterException();
 			}
 
-			File pngFile = new File(pgmFile.getAbsolutePath().replace(".pgm",
-					".png"));
-
-			File tDir = new File(pgmFile.getParentFile(), "t");
+			File tDir = new File(rawFile.getParentFile(), "t");
 
 			if (!tDir.exists()) {
 				tDir.mkdir();
 			}
 
-			File tFile = new File(tDir, pngFile.getName());
+			File tFile = new File(tDir, rawFile.getName());
 
-			String command = "convert " + pgmFile.getAbsolutePath() + " "
-					+ pngFile.getAbsolutePath();
-
-			exec(command);
-
-			FileUtils.deleteQuietly(pgmFile);
-
-			command = "convert " + pngFile + " -resize x200 "
+			String command = "convert " + rawFile + " -resize x200 "
 					+ tFile.getAbsolutePath();
 
 			exec(command);
 
 		}
+		
+		//pngcrush -bit_depth 2 -q -l 9 -rem gAMA -rem cHRM -rem iCCP -rem sRGB $g $newFile;
 
 		return null;
 
