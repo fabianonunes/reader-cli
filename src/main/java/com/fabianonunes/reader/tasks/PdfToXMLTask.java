@@ -86,123 +86,60 @@ public class PdfToXMLTask implements Callable<Integer>, Serializable {
 
 		Integer lastPage = Math.min(this.lastPage, (firstPage + totalPages));
 
-		String command = "pdftoxml -noImage -noImageInline" + " -f " + firstPage
-				+ " -l " + lastPage + " " + pdfFile.getAbsolutePath() + " "
-				+ output.getAbsolutePath();
-		
-		
+		String command = "pdftoxml -noImage -noImageInline" + " -f "
+				+ firstPage + " -l " + lastPage + " "
+				+ pdfFile.getAbsolutePath() + " " + output.getAbsolutePath();
+
 		CommandLine cmdLine = CommandLine.parse(command);
 
-		//ExecuteWatchdog watchdog = new ExecuteWatchdog(10 * 60 * 1000);
+		// ExecuteWatchdog watchdog = new ExecuteWatchdog(10 * 60 * 1000);
 		Executor exec = new DefaultExecutor();
-		//exec.setWatchdog(watchdog);
+		// exec.setWatchdog(watchdog);
 		exec.setExitValue(0);
 		exec.setStreamHandler(new ExecuteStreamHandler() {
-			
+
 			@Override
 			public void stop() {
 				// TODO Auto-generated method stub
-				
+
 			}
-			
+
 			@Override
 			public void start() throws IOException {
 				// TODO Auto-generated method stub
-				
+
 			}
-			
+
 			@Override
-			public void setProcessOutputStream(InputStream is) throws IOException {
+			public void setProcessOutputStream(InputStream is)
+					throws IOException {
 				// TODO Auto-generated method stub
-				
+
 			}
-			
+
 			@Override
-			public void setProcessInputStream(OutputStream os) throws IOException {
+			public void setProcessInputStream(OutputStream os)
+					throws IOException {
 				// TODO Auto-generated method stub
-				
+
 			}
-			
+
 			@Override
-			public void setProcessErrorStream(InputStream is) throws IOException {
+			public void setProcessErrorStream(InputStream is)
+					throws IOException {
 				// TODO Auto-generated method stub
-				
+
 			}
 		});
 
 		exec.execute(cmdLine);
-		
-		
-		
+
 		command = "tidy -utf8 -xml -w 255 -i -c -q -asxml -o "
-			+ output.getAbsolutePath() + " " + output.getAbsolutePath();
-		
+				+ output.getAbsolutePath() + " " + output.getAbsolutePath();
+
 		cmdLine = CommandLine.parse(command);
-		
+
 		exec.execute(cmdLine);
-	
-
-
-
-		// String osName = System.getProperty("os.name");
-		//
-		// if (osName.contains("Windows")) {
-		//
-		// String[] cmd = new String[3];
-		// cmd[0] = "cmd.exe";
-		// cmd[1] = "/C";
-		// cmd[2] = command;
-		//
-		// p = runtime.exec(cmd);
-		//
-		// StreamGobbler errorGobbler = new StreamGobbler(p.getErrorStream(),
-		// "ERROR");
-		//
-		// StreamGobbler outputGobbler = new StreamGobbler(p.getInputStream(),
-		// "OUTPUT");
-		//
-		// // kick them off
-		// errorGobbler.start();
-		// outputGobbler.start();
-		//
-		// } else {
-		//
-		// p = runtime.exec(command);
-		// }
-		//
-		// p.waitFor();
-		//
-		// p.destroy();
-		//
-		// try {
-		// p.getErrorStream().close();
-		// } catch (Exception e) {
-		// // quietly
-		// }
-		//
-		// try {
-		// p.getInputStream().close();
-		// } catch (Exception e) {
-		// // quietly
-		// }
-
-		// p = runtime.exec(command);
-		//
-		// p.waitFor();
-		//
-		// p.destroy();
-		//
-		// try {
-		// p.getErrorStream().close();
-		// } catch (Exception e) {
-		// // quietly
-		// }
-		//
-		// try {
-		// p.getInputStream().close();
-		// } catch (Exception e) {
-		// // quietly
-		// }
 
 		return null;
 

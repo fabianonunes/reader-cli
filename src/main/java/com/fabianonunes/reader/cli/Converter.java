@@ -17,6 +17,7 @@ import org.apache.commons.io.filefilter.FileFilterUtils;
 import com.fabianonunes.reader.pdf.text.position.OptiXML;
 import com.fabianonunes.reader.storage.ReaderDocument;
 import com.fabianonunes.reader.tasks.PdfToImageTask;
+import com.fabianonunes.reader.tasks.PdfToXMLTask;
 import com.fabianonunes.reader.tasks.XmlAssembler;
 import com.fabianonunes.reader.text.index.BatchIndexer;
 import com.fabianonunes.reader.text.index.Indexer;
@@ -56,7 +57,7 @@ public class Converter {
 
 		File inputDir = new File("/media/TST02/Processos/Convert");
 
-		inputDir = new File("/home/fabiano/workdir/converter");
+		// inputDir = new File("/home/fabiano/workdir/converter");
 
 		File[] pdfFiles = inputDir.listFiles(pdfFilter);
 
@@ -84,9 +85,11 @@ public class Converter {
 
 	public Converter() throws UnknownHostException, MongoException {
 
-		m = new Mongo();
+		m = new Mongo("10.0.223.163");
 
 		db = m.getDB("sesdi2");
+
+		db.authenticate("fabiano_sesdi2", "timestamp-2010".toCharArray());
 
 		processos = db.getCollection("processos");
 
@@ -154,6 +157,8 @@ public class Converter {
 
 	public void convert(final ReaderDocument document) throws Throwable {
 
+		long fStart = System.currentTimeMillis();
+
 		File pdfFile = document.getPdf();
 
 		numOfPages = calcNumOfPages(pdfFile);
@@ -165,7 +170,7 @@ public class Converter {
 		processos.save(doc);
 		//
 
-		ExecutorService executor = Executors.newFixedThreadPool(8);
+		ExecutorService executor = Executors.newFixedThreadPool(2);
 		LinkedList<Future<Integer>> tasks = new LinkedList<Future<Integer>>();
 
 		Integer iterations = new Double(Math.ceil(numOfPages / 8f)).intValue();
@@ -185,13 +190,13 @@ public class Converter {
 			Future<Integer> task = executor.submit(pdfTask);
 			tasks.add(task);
 
-			// PdfToXMLTask xmlTask = new PdfToXMLTask(document);
-			// xmlTask.setFirstPage(step * i + 1);
-			// xmlTask.setTotalPages(step - 1);
-			// xmlTask.setLastPage(numOfPages);
-			//
-			// Future<Integer> task2 = executor.submit(xmlTask);
-			// tasks.add(task2);
+			PdfToXMLTask xmlTask = new PdfToXMLTask(document);
+			xmlTask.setFirstPage(step * i + 1);
+			xmlTask.setTotalPages(step - 1);
+			xmlTask.setLastPage(numOfPages);
+
+			Future<Integer> task2 = executor.submit(xmlTask);
+			tasks.add(task2);
 
 		}
 
@@ -207,8 +212,6 @@ public class Converter {
 		}
 
 		executor.shutdown();
-		
-		System.exit(0);
 
 		executor.awaitTermination(20, TimeUnit.MINUTES);
 
@@ -232,7 +235,6 @@ public class Converter {
 		System.out.println(" [" + ((start - System.currentTimeMillis()) / 1000)
 				+ " s]");
 
-		//
 		System.out.print("Storing images in database...");
 		start = System.currentTimeMillis();
 		File[] thumbsFiles = document.getThumbsFolder().listFiles(pngFilter);
@@ -283,6 +285,8 @@ public class Converter {
 		} catch (Exception e) {
 			// queitly
 		}
+
+		System.out.println(-fStart + System.currentTimeMillis());
 
 	}
 

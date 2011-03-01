@@ -117,16 +117,31 @@ public class PdfToImageTask implements Callable<Integer>, Serializable {
 				tDir.mkdir();
 			}
 
-			File tFile = new File(tDir, rawFile.getName());
+			File tFile = new File(tDir, rawFile.getName()
+					.replaceAll("p-0*", ""));
 
-			String command = "convert " + rawFile + " -resize x200 "
+			String command = "convert -depth 2 " + rawFile + " -resize x200 "
 					+ tFile.getAbsolutePath();
 
 			exec(command);
 
 		}
-		
-		//pngcrush -bit_depth 2 -q -l 9 -rem gAMA -rem cHRM -rem iCCP -rem sRGB $g $newFile;
+
+		for (File file : rawFiles) {
+
+			String name = file.getName();
+
+			File outFile = new File(file.getParentFile(), name.replaceAll(
+					"p-0*", ""));
+
+			String command = "convert -depth 2 " + file.getAbsolutePath() + " "
+					+ outFile;
+
+			exec(command);
+
+			file.delete();
+
+		}
 
 		return null;
 

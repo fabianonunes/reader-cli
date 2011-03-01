@@ -21,47 +21,31 @@ public class ImageGridFS {
 
 	public static void main(String[] args) throws MongoException, IOException {
 
-		Mongo m = new Mongo();
+		Mongo m = new Mongo("10.0.223.163");
 
 		DB db = m.getDB("sesdi2");
+		
+		db.authenticate("fabiano_sesdi2", "timestamp-2010".toCharArray());
 
 		GridFS gfs = new GridFS(db, "images");
 
 		Pattern john = Pattern.compile("^inicial", Pattern.CASE_INSENSITIVE);
+		
 		BasicDBObject query = new BasicDBObject("filename", john);
 
 		gfs.remove(query);
 
-		File dir = new File(
-				"/media/TST02/Processos/inicial/images/png");
+		File dir = new File("/home/fabiano/workdir/png");
 
 		File[] files = dir.listFiles(pngFilter);
 
 		for (File file : files) {
 
 			GridFSInputFile gfsFile = gfs.createFile(file);
-
+			
 			gfsFile.setContentType("image/png");
 
-			gfsFile.setFilename("inicial/"
-					+ file.getName().replace(".png.gz", ""));
-
-			gfsFile.save();
-
-		}
-
-		dir = new File("/media/TST02/Processos/inicial/images/png/t");
-
-		files = dir.listFiles(pngFilter);
-
-		for (File file : files) {
-
-			GridFSInputFile gfsFile = gfs.createFile(file);
-
-			gfsFile.setContentType("image/png");
-
-			gfsFile.setFilename("inicial/t/"
-					+ file.getName().replace(".png.gz", ""));
+			gfsFile.setFilename("inicial/" + file.getName());
 
 			gfsFile.save();
 
