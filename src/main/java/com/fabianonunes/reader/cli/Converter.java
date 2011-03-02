@@ -5,7 +5,6 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.LinkedList;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -13,13 +12,13 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
+import org.jdom.JDOMException;
 
 import com.fabianonunes.reader.pdf.text.position.OptiXML;
 import com.fabianonunes.reader.storage.ReaderDocument;
 import com.fabianonunes.reader.tasks.PdfToImageTask;
 import com.fabianonunes.reader.tasks.PdfToXMLTask;
 import com.fabianonunes.reader.tasks.XmlAssembler;
-import com.fabianonunes.reader.text.index.BatchIndexer;
 import com.fabianonunes.reader.text.index.Indexer;
 import com.itextpdf.text.pdf.PdfReader;
 import com.itextpdf.text.pdf.RandomAccessFileOrArray;
@@ -30,6 +29,15 @@ import com.mongodb.Mongo;
 import com.mongodb.MongoException;
 import com.mongodb.gridfs.GridFS;
 import com.mongodb.gridfs.GridFSInputFile;
+import com.ximpleware.EOFException;
+import com.ximpleware.EncodingException;
+import com.ximpleware.EntityException;
+import com.ximpleware.ModifyException;
+import com.ximpleware.NavException;
+import com.ximpleware.ParseException;
+import com.ximpleware.TranscodeException;
+import com.ximpleware.XPathEvalException;
+import com.ximpleware.XPathParseException;
 
 public class Converter {
 
@@ -52,6 +60,8 @@ public class Converter {
 	private DBCollection processos;
 
 	private Integer numOfPages;
+
+	private long timer;
 
 	public static void main(String[] args) throws Throwable {
 
@@ -85,11 +95,11 @@ public class Converter {
 
 	public Converter() throws UnknownHostException, MongoException {
 
-		m = new Mongo("10.0.223.163");
+		m = new Mongo();// "10.0.223.163"
 
 		db = m.getDB("sesdi2");
 
-		db.authenticate("fabiano_sesdi2", "timestamp-2010".toCharArray());
+		// db.authenticate("fabiano_sesdi2", "timestamp-2010".toCharArray());
 
 		processos = db.getCollection("processos");
 
@@ -100,95 +110,55 @@ public class Converter {
 
 	}
 
-	public static void main2(String[] args) throws Throwable {
-
-		File inputDir = new File("/media/TST02/Processos-Analysys/40-100");
-		File indexDir = new File("/media/TST02/Processos-Analysys/40-100/index");
-		indexDir.mkdir();
-
-		File[] rddFiles = inputDir.listFiles();
-
-		final BatchIndexer indexer = new BatchIndexer(indexDir);
-
-		ExecutorService executor = Executors.newFixedThreadPool(1);
-
-		LinkedList<Future<String>> tasks = new LinkedList<Future<String>>();
-
-		for (final File file : rddFiles) {
-
-			Future<String> future = executor.submit(new Callable<String>() {
-
-				@Override
-				public String call() throws Exception {
-
-					ReaderDocument rdd = new ReaderDocument(file);
-
-					if (rdd.getFullText().exists()) {
-
-						indexer.index(rdd.getFullText(), rdd.getFolder()
-								.getName());
-
-					}
-
-					return null;
-				}
-			});
-
-			tasks.add(future);
-
-		}
-
-		for (Future<String> future : tasks) {
-
-			try {
-				future.get();
-			} catch (Exception e) {
-				System.out.println("Error in: " + e.getMessage());
-				e.printStackTrace();
-			}
-
-		}
-
-		indexer.close();
-
-		executor.shutdown();
-
-	}
-
-	public void convert(final ReaderDocument document) throws Throwable {
-
-		long fStart = System.currentTimeMillis();
+	public void convert(ReaderDocument document) throws Throwable {
 
 		File pdfFile = document.getPdf();
 
 		numOfPages = calcNumOfPages(pdfFile);
-
 		//
-		BasicDBObject doc = new BasicDBObject();
-		doc.append("name", document.getFolder().getName());
-		doc.append("pages", numOfPages);
-		processos.save(doc);
+		startTimer();
+		extractImages(document);
+		endTimer();
 		//
+		startTimer();
+		extractText(document);
+		endTimer();
+		//
+		startTimer();
+		manipulateTextFiles(document);
+		endTimer();
+		//
+		startTimer();
+		addDocToDB(document);
+		endTimer();
+		//
+		startTimer();
+		indexDocument(document);
+		endTimer();
+		//
+		startTimer();
+		autoIndexDocument(document);
+		endTimer();
+		//
+		startTimer();
+		extractPdfData(document);
+		endTimer();
 
-		ExecutorService executor = Executors.newFixedThreadPool(2);
+	}
+
+	private void extractText(ReaderDocument document)
+			throws InterruptedException {
+
+		ExecutorService executor = Executors.newFixedThreadPool(4);
+
 		LinkedList<Future<Integer>> tasks = new LinkedList<Future<Integer>>();
 
 		Integer iterations = new Double(Math.ceil(numOfPages / 8f)).intValue();
 
-		System.out.print("Converting pdf to xml/images...");
-
-		long start = System.currentTimeMillis();
+		System.out.print("Converting pdf to xml...");
 
 		Integer step = 8;
 		for (int i = 0; i < iterations; i++) {
-
-			PdfToImageTask pdfTask = new PdfToImageTask(document);
-			pdfTask.setFirstPage(step * i + 1);
-			pdfTask.setTotalPages(step - 1);
-			pdfTask.setLastPage(numOfPages);
-
-			Future<Integer> task = executor.submit(pdfTask);
-			tasks.add(task);
 
 			PdfToXMLTask xmlTask = new PdfToXMLTask(document);
 			xmlTask.setFirstPage(step * i + 1);
@@ -215,46 +185,21 @@ public class Converter {
 
 		executor.awaitTermination(20, TimeUnit.MINUTES);
 
-		System.out.println(" [" + ((start - System.currentTimeMillis()) / 1000)
-				+ " s]");
+	}
 
-		File[] files = document.getTextFolder().listFiles(xmlFilter);
+	private void extractPdfData(ReaderDocument document) {
+		System.out.println("Extracting outline/annotations...");
+		try {
+			document.extractData();
+		} catch (Exception e) {
+			// queitly
+		}
+	}
 
-		System.out.print("Merging XML files...");
-		start = System.currentTimeMillis();
-		XmlAssembler.assemble(files, document.getFullText(), "//PAGE");
-		System.out.println(" [" + ((start - System.currentTimeMillis()) / 1000)
-				+ " s]");
-
-		//
-		System.out.print("Optimizing XML files...");
-		start = System.currentTimeMillis();
-		File fullFile = document.getFullText();
-		OptiXML opti = new OptiXML(fullFile);
-		opti.optimize();
-		System.out.println(" [" + ((start - System.currentTimeMillis()) / 1000)
-				+ " s]");
-
-		System.out.print("Storing images in database...");
-		start = System.currentTimeMillis();
-		File[] thumbsFiles = document.getThumbsFolder().listFiles(pngFilter);
-		File[] pngFiles = document.getImageFolder().listFiles(pngFilter);
-
-		storeImages(pngFiles, document.getFolder().getName());
-		storeImages(thumbsFiles, document.getFolder().getName() + "/t");
-		System.out.println(" [" + ((start - System.currentTimeMillis()) / 1000)
-				+ " s]");
-
-		// List<File> pngs = new ArrayList<File>();
-		// pngs.addAll(Arrays.asList(thumbsFiles));
-		// for (File pngFile : pngs) {
-		// File toFile = new File(pngFile.getParentFile(), pngFile.getName()
-		// .replaceAll("p-0*", ""));
-		// pngFile.renameTo(toFile);
-		// }
-
-		FileUtils.cleanDirectory(document.getIndexFolder());
-		// FileUtils.forceDelete(document.getImageFolder());
+	private void indexDocument(ReaderDocument document) throws IOException,
+			EncodingException, EOFException, EntityException, ParseException,
+			XPathParseException, NavException, XPathEvalException,
+			JDOMException {
 
 		System.out.println("Indexing documents...");
 		Indexer indexer = new Indexer(document.getIndexFolder(), document
@@ -264,29 +209,85 @@ public class Converter {
 
 		indexer.close();
 
-		// Auto indexing
-		// FileFilter filter = FileFilterUtils.suffixFileFilter(".xml");
-		// File[] rules = rulesFolder.listFiles(filter);
-		//
-		// if (rules != null) {
-		//
-		// Classifier c = new Classifier(document.getIndexFolder());
-		// TreeMap<String, List<Integer>> results = c.analyze(rules);
-		// c.close();
-		//
-		// OutlineHandler outline = new OutlineHandler(results);
-		// JSONObject data = new JSONObject();
-		// data.put("children", outline.getRoot());
-		// document.saveData(data.toString());
+	}
 
-		System.out.println("Extracting outline/annotations...");
-		try {
-			document.extractData();
-		} catch (Exception e) {
-			// queitly
+	private void manipulateTextFiles(ReaderDocument document)
+			throws EncodingException, EOFException, EntityException,
+			XPathParseException, NavException, XPathEvalException,
+			ParseException, IOException, ModifyException, TranscodeException {
+
+		File[] files = document.getTextFolder().listFiles(xmlFilter);
+
+		System.out.print("Merging XML files...");
+		XmlAssembler.assemble(files, document.getFullText(), "//PAGE");
+
+		//
+		System.out.print("Optimizing XML files...");
+		File fullFile = document.getFullText();
+		OptiXML opti = new OptiXML(fullFile);
+		opti.optimize();
+
+	}
+
+	private void extractImages(ReaderDocument document)
+			throws InterruptedException {
+
+		ExecutorService executor = Executors.newFixedThreadPool(4);
+
+		LinkedList<Future<Integer>> tasks = new LinkedList<Future<Integer>>();
+
+		Integer iterations = new Double(Math.ceil(numOfPages / 8f)).intValue();
+
+		System.out.print("Converting pdf to images...");
+
+		Integer step = 8;
+		for (int i = 0; i < iterations; i++) {
+
+			PdfToImageTask pdfTask = new PdfToImageTask(document);
+			pdfTask.setFirstPage(step * i + 1);
+			pdfTask.setTotalPages(step - 1);
+			pdfTask.setLastPage(numOfPages);
+
+			Future<Integer> task = executor.submit(pdfTask);
+			tasks.add(task);
+
 		}
 
-		System.out.println(-fStart + System.currentTimeMillis());
+		for (Future<Integer> future : tasks) {
+
+			try {
+				future.get();
+			} catch (Exception e) {
+				System.out.println("Error in: " + e.getMessage());
+				e.printStackTrace();
+			}
+
+		}
+
+		executor.shutdown();
+
+		executor.awaitTermination(20, TimeUnit.MINUTES);
+
+	}
+
+	private void addDocToDB(ReaderDocument document) throws IOException {
+
+		BasicDBObject doc = new BasicDBObject();
+		doc.append("name", document.getFolder().getName());
+		doc.append("pages", numOfPages);
+		processos.save(doc);
+
+		// storing images
+
+		File[] thumbsFiles = document.getThumbsFolder().listFiles(pngFilter);
+		File[] pngFiles = document.getImageFolder().listFiles(pngFilter);
+		File[] xmlGzFiles = document.getSimpleTextFolder().listFiles();
+
+		storeImages(pngFiles, document.getFolder().getName());
+		storeImages(thumbsFiles, document.getFolder().getName() + "/t");
+		storeImages(xmlGzFiles, document.getFolder().getName() + "/s");
+		FileUtils.cleanDirectory(document.getIndexFolder());
+		// FileUtils.forceDelete(document.getImageFolder());
 
 	}
 
@@ -322,6 +323,36 @@ public class Converter {
 			FileUtils.deleteQuietly(file);
 
 		}
+
+	}
+
+	private void autoIndexDocument(ReaderDocument document) {
+		// Auto indexing
+		// FileFilter filter = FileFilterUtils.suffixFileFilter(".xml");
+		// File[] rules = rulesFolder.listFiles(filter);
+		// if (rules != null) {
+		// Classifier c = new Classifier(document.getIndexFolder());
+		// TreeMap<String, List<Integer>> results = c.analyze(rules);
+		// c.close();
+		// OutlineHandler outline = new OutlineHandler(results);
+		// JSONObject data = new JSONObject();
+		// data.put("children", outline.getRoot());
+		// document.saveData(data.toString());
+	}
+
+	private void startTimer() {
+
+		timer = System.currentTimeMillis();
+
+	}
+
+	private void endTimer() {
+
+		long c = System.currentTimeMillis();
+
+		double r = (c - timer) / 1000;
+
+		System.out.println(r);
 
 	}
 

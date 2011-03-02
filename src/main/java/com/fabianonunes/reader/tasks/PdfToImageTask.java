@@ -71,7 +71,7 @@ public class PdfToImageTask implements Callable<Integer>, Serializable {
 
 		Integer lastPage = Math.min(this.lastPage, (firstPage + totalPages));
 
-		String command = "pdftoppm -r 300" + //
+		String command = "pdftoppm -r 200" + //
 				" -f " + firstPage + //
 				" -l " + lastPage + //
 				" -png -scale-to 1000 " + //
