@@ -130,7 +130,7 @@ public class Converter {
 		endTimer();
 		// //
 		// startTimer();
-		// addDocToDB(document);
+		storeToDB();
 		// endTimer();
 		// //
 		// startTimer();
@@ -305,7 +305,7 @@ public class Converter {
 
 	}
 
-	protected void addDocToDB() throws IOException {
+	public void storeToDB() throws IOException {
 
 		BasicDBObject doc = new BasicDBObject();
 		doc.append("name", document.getFolder().getName());
@@ -321,7 +321,8 @@ public class Converter {
 		storeImages(pngFiles, document.getFolder().getName());
 		storeImages(thumbsFiles, document.getFolder().getName() + "/t");
 		storeImages(xmlGzFiles, document.getFolder().getName() + "/s");
-		FileUtils.cleanDirectory(document.getIndexFolder());
+		
+		// FileUtils.cleanDirectory(document.getIndexFolder());
 		// FileUtils.forceDelete(document.getImageFolder());
 
 	}

@@ -70,7 +70,7 @@ public class Indexer {
 		byte[] b = FileUtils.readFileToByteArray(xmlFile);
 		vg = new VTDGen();
 		vg.setDoc(b);
-		vg.parse(true);
+		vg.parse(false);
 
 		VTDNav nav = vg.getNav();
 		ap.bind(nav);
@@ -79,7 +79,7 @@ public class Indexer {
 
 		int count = 0, t;
 		while (ap.evalXPath() != -1) {
-
+			
 			FastLongBuffer flb = new FastLongBuffer(4);
 
 			ByteArrayOutputStream fos = new ByteArrayOutputStream();
@@ -97,12 +97,14 @@ public class Indexer {
 			}
 
 			fos.close();
+			
+			VTDNav n = nav.cloneNav();
 
-			t = nav.getAttrVal("n");
+			t = n.getAttrVal("n");
 
-			String pageNumber = nav.toNormalizedString(t);
+			String pageNumber = n.toNormalizedString(t);
 
-			boolean hasChild = nav.toElement(VTDNav.FIRST_CHILD);
+			boolean hasChild = n.toElement(VTDNav.FIRST_CHILD);
 
 			if (!hasChild) {
 				continue;
@@ -110,13 +112,13 @@ public class Indexer {
 
 			StringBuffer buffer = new StringBuffer();
 
-			while (nav.toElement(VTDNav.NEXT_SIBLING)) {
+			while (n.toElement(VTDNav.NEXT_SIBLING)) {
 
-				t = nav.getText();
+				t = n.getText();
 
 				if (t > -1) {
 
-					buffer.append(nav.toNormalizedString(t).trim() + " ");
+					buffer.append(n.toNormalizedString(t).trim() + " ");
 
 				}
 
@@ -135,8 +137,6 @@ public class Indexer {
 
 	private void indexPage(String contents, String plaintext, String pageNumber)
 			throws IOException {
-
-		System.out.println(plaintext);
 
 		Document document = new Document();
 

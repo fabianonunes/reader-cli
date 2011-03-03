@@ -72,6 +72,10 @@ public class CLIActions {
 
 			c.optimizeImages();
 
+		} else if (metodo.equals("store-db")) {
+
+			c.storeToDB();
+
 		} else if (metodo.equals("auto-bookmark")) {
 
 		} else if (metodo.equals("extract-data")) {
