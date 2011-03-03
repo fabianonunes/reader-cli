@@ -71,10 +71,10 @@ public class PdfToImageTask implements Callable<Integer>, Serializable {
 
 		Integer lastPage = Math.min(this.lastPage, (firstPage + totalPages));
 
-		String command = "pdftoppm -r 200" + //
+		String command = "pdftoppm -r 110" + //
 				" -f " + firstPage + //
 				" -l " + lastPage + //
-				" -png -scale-to 1000 " + //
+				" -gray " + //
 				pdfFile.getAbsolutePath() + //
 				" " + outputDir.getAbsolutePath() + "/p";
 
@@ -93,53 +93,44 @@ public class PdfToImageTask implements Callable<Integer>, Serializable {
 
 		ArrayList<File> rawFiles = new ArrayList<File>();
 
-		Double chars = Math.floor(Math.log10(this.lastPage.doubleValue())) + 1;
+		Double numOfChars = Math.floor(Math.log10(this.lastPage.doubleValue())) + 1;
 
 		for (int i = firstPage; i <= lastPage; i++) {
 
 			String name = StringUtils.leftPad(Integer.toString(i),
-					chars.intValue(), "0");
+					numOfChars.intValue(), "0");
 
-			rawFiles.add(new File(outputDir, "p-" + name + ".png"));
+			rawFiles.add(new File(outputDir, "p-" + name + ".pgm"));
 
 		}
 
-		for (File rawFile : rawFiles) {
+		for (File pgmFile : rawFiles) {
 
-			if (rawFile == null || !rawFile.isFile()) {
-				System.out.println(rawFile);
-				throw new InvalidParameterException();
+			String command;
+
+			if (pgmFile == null || !pgmFile.isFile()) {
+				continue;
 			}
 
-			File tDir = new File(rawFile.getParentFile(), "t");
+			File tDir = new File(pgmFile.getParentFile(), "t");
 
 			if (!tDir.exists()) {
 				tDir.mkdir();
 			}
 
-			File tFile = new File(tDir, rawFile.getName()
-					.replaceAll("p-0*", ""));
+			String outName = pgmFile.getName().replaceAll("p-0*", "")
+					.replace("pgm", "png");
 
-			String command = "convert -depth 2 " + rawFile + " -resize x200 "
-					+ tFile.getAbsolutePath();
+			File pFile = new File(pgmFile.getParentFile(), outName);
+			File tFile = new File(tDir, outName);
 
+			command = "convert -depth 2 " + pgmFile + " " + pFile;
 			exec(command);
 
-		}
-
-		for (File file : rawFiles) {
-
-			String name = file.getName();
-
-			File outFile = new File(file.getParentFile(), name.replaceAll(
-					"p-0*", ""));
-
-			String command = "convert -depth 2 " + file.getAbsolutePath() + " "
-					+ outFile;
-
+			command = "convert -resize 200x -depth 2 " + pFile + " " + tFile;
 			exec(command);
 
-			file.delete();
+			pgmFile.delete();
 
 		}
 
@@ -154,8 +145,8 @@ public class PdfToImageTask implements Callable<Integer>, Serializable {
 
 		CommandLine cmdLine = CommandLine.parse(command);
 
-		// ExecuteWatchdog watchdog = new ExecuteWatchdog(60*1000);
 		Executor exec = new DefaultExecutor();
+		// ExecuteWatchdog watchdog = new ExecuteWatchdog(60*1000);
 		// exec.setWatchdog(watchdog);
 		exec.setExitValue(0);
 

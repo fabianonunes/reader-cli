@@ -67,7 +67,7 @@ public class Converter {
 
 		File inputDir = new File("/media/TST02/Processos/Convert");
 
-		// inputDir = new File("/home/fabiano/workdir/converter");
+		inputDir = new File("/home/fabiano/workdir/converter");
 
 		File[] pdfFiles = inputDir.listFiles(pdfFilter);
 
@@ -81,7 +81,7 @@ public class Converter {
 
 			c.convert(rdd);
 
-			System.out.println(System.currentTimeMillis() - start);
+			System.out.println((System.currentTimeMillis() - start) / 1000d);
 
 			c = null;
 
@@ -127,35 +127,35 @@ public class Converter {
 		startTimer();
 		manipulateTextFiles(document);
 		endTimer();
-		//
-		startTimer();
-		addDocToDB(document);
-		endTimer();
-		//
-		startTimer();
-		indexDocument(document);
-		endTimer();
-		//
-		startTimer();
-		autoIndexDocument(document);
-		endTimer();
-		//
-		startTimer();
+//		//
+//		startTimer();
+//		addDocToDB(document);
+//		endTimer();
+//		//
+//		startTimer();
+//		indexDocument(document);
+//		endTimer();
+//
+//		// startTimer();
+//		// autoIndexDocument(document);
+//		// endTimer();
+//
+//		startTimer();
 		extractPdfData(document);
-		endTimer();
+//		endTimer();
 
 	}
 
 	private void extractText(ReaderDocument document)
 			throws InterruptedException {
 
+		System.out.print("Converting pdf to xml... ");
+
 		ExecutorService executor = Executors.newFixedThreadPool(4);
 
 		LinkedList<Future<Integer>> tasks = new LinkedList<Future<Integer>>();
 
 		Integer iterations = new Double(Math.ceil(numOfPages / 8f)).intValue();
-
-		System.out.print("Converting pdf to xml...");
 
 		Integer step = 8;
 		for (int i = 0; i < iterations; i++) {
@@ -187,8 +187,8 @@ public class Converter {
 
 	}
 
-	private void extractPdfData(ReaderDocument document) {
-		System.out.println("Extracting outline/annotations...");
+	protected void extractPdfData(ReaderDocument document) {
+		System.out.print("Extracting outline/annotations... ");
 		try {
 			document.extractData();
 		} catch (Exception e) {
@@ -196,12 +196,12 @@ public class Converter {
 		}
 	}
 
-	private void indexDocument(ReaderDocument document) throws IOException,
+	protected void indexDocument(ReaderDocument document) throws IOException,
 			EncodingException, EOFException, EntityException, ParseException,
 			XPathParseException, NavException, XPathEvalException,
 			JDOMException {
 
-		System.out.println("Indexing documents...");
+		System.out.print("Indexing documents... ");
 		Indexer indexer = new Indexer(document.getIndexFolder(), document
 				.getFolder().getName());
 
@@ -218,11 +218,8 @@ public class Converter {
 
 		File[] files = document.getTextFolder().listFiles(xmlFilter);
 
-		System.out.print("Merging XML files...");
 		XmlAssembler.assemble(files, document.getFullText(), "//PAGE");
 
-		//
-		System.out.print("Optimizing XML files...");
 		File fullFile = document.getFullText();
 		OptiXML opti = new OptiXML(fullFile);
 		opti.optimize();
@@ -232,13 +229,13 @@ public class Converter {
 	private void extractImages(ReaderDocument document)
 			throws InterruptedException {
 
+		System.out.print("Converting pdf to images... ");
+
 		ExecutorService executor = Executors.newFixedThreadPool(4);
 
 		LinkedList<Future<Integer>> tasks = new LinkedList<Future<Integer>>();
 
 		Integer iterations = new Double(Math.ceil(numOfPages / 8f)).intValue();
-
-		System.out.print("Converting pdf to images...");
 
 		Integer step = 8;
 		for (int i = 0; i < iterations; i++) {
@@ -270,7 +267,9 @@ public class Converter {
 
 	}
 
-	private void addDocToDB(ReaderDocument document) throws IOException {
+	protected void addDocToDB(ReaderDocument document) throws IOException {
+
+		System.out.print("Storing images/text in database... ");
 
 		BasicDBObject doc = new BasicDBObject();
 		doc.append("name", document.getFolder().getName());
@@ -326,7 +325,7 @@ public class Converter {
 
 	}
 
-	private void autoIndexDocument(ReaderDocument document) {
+	protected void autoIndexDocument(ReaderDocument document) {
 		// Auto indexing
 		// FileFilter filter = FileFilterUtils.suffixFileFilter(".xml");
 		// File[] rules = rulesFolder.listFiles(filter);
@@ -350,9 +349,9 @@ public class Converter {
 
 		long c = System.currentTimeMillis();
 
-		double r = (c - timer) / 1000;
+		Double r = (c - timer) / 1000d;
 
-		System.out.println(r);
+		System.out.println("[" + r + "secs]");
 
 	}
 
