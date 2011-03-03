@@ -3,8 +3,10 @@ package com.fabianonunes.reader.cli;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
-import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -12,10 +14,10 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
-import org.jdom.JDOMException;
 
 import com.fabianonunes.reader.pdf.text.position.OptiXML;
 import com.fabianonunes.reader.storage.ReaderDocument;
+import com.fabianonunes.reader.tasks.CommandLineExecutor;
 import com.fabianonunes.reader.tasks.PdfToImageTask;
 import com.fabianonunes.reader.tasks.PdfToXMLTask;
 import com.fabianonunes.reader.tasks.XmlAssembler;
@@ -63,6 +65,8 @@ public class Converter {
 
 	private long timer;
 
+	private ReaderDocument document;
+
 	public static void main(String[] args) throws Throwable {
 
 		File inputDir = new File("/media/TST02/Processos/Convert");
@@ -73,19 +77,11 @@ public class Converter {
 
 		for (File file : pdfFiles) {
 
-			Converter c = new Converter();
-
 			ReaderDocument rdd = ReaderDocument.generateDocument(file);
 
-			long start = System.currentTimeMillis();
+			Converter c = new Converter(rdd);
 
-			c.convert(rdd);
-
-			System.out.println((System.currentTimeMillis() - start) / 1000d);
-
-			c = null;
-
-			System.gc();
+			c.convert();
 
 			// break;
 
@@ -93,7 +89,14 @@ public class Converter {
 
 	}
 
-	public Converter() throws UnknownHostException, MongoException {
+	public Converter(ReaderDocument document) throws MongoException,
+			IOException {
+
+		this.document = document;
+
+		File pdfFile = document.getPdf();
+
+		numOfPages = calcNumOfPages(pdfFile);
 
 		m = new Mongo();// "10.0.223.163"
 
@@ -110,46 +113,87 @@ public class Converter {
 
 	}
 
-	public void convert(ReaderDocument document) throws Throwable {
+	public void convert() throws Throwable {
+		//
+		startTimer();
+		extractImages();
+		endTimer();
 
-		File pdfFile = document.getPdf();
-
-		numOfPages = calcNumOfPages(pdfFile);
+		optimizeImages();
 		//
 		startTimer();
-		extractImages(document);
+		extractText();
 		endTimer();
 		//
 		startTimer();
-		extractText(document);
+		manipulateTextFiles();
 		endTimer();
+		// //
+		// startTimer();
+		// addDocToDB(document);
+		// endTimer();
+		// //
+		// startTimer();
+		// indexDocument(document);
+		// endTimer();
 		//
-		startTimer();
-		manipulateTextFiles(document);
-		endTimer();
-//		//
-//		startTimer();
-//		addDocToDB(document);
-//		endTimer();
-//		//
-//		startTimer();
-//		indexDocument(document);
-//		endTimer();
-//
-//		// startTimer();
-//		// autoIndexDocument(document);
-//		// endTimer();
-//
-//		startTimer();
-		extractPdfData(document);
-//		endTimer();
+		// // startTimer();
+		// // autoIndexDocument(document);
+		// // endTimer();
+		//
+		// startTimer();
+		extractPdfData();
+		// endTimer();
 
 	}
 
-	private void extractText(ReaderDocument document)
-			throws InterruptedException {
+	public void optimizeImages() throws InterruptedException {
 
-		System.out.print("Converting pdf to xml... ");
+		ExecutorService executor = Executors.newFixedThreadPool(4);
+
+		LinkedList<Future<Integer>> tasks = new LinkedList<Future<Integer>>();
+
+		File[] images = document.getImageFolder().listFiles(pngFilter);
+		File[] thumbs = document.getThumbsFolder().listFiles(pngFilter);
+
+		ArrayList<File> files = new ArrayList<File>();
+		files.addAll(Arrays.asList(images));
+		files.addAll(Arrays.asList(thumbs));
+
+		for (final File file : files) {
+
+			Future<Integer> task2 = executor.submit(new Callable<Integer>() {
+
+				@Override
+				public Integer call() throws Exception {
+					String command = "optipng -q " + file.getAbsolutePath();
+					CommandLineExecutor.exec(command);
+					return null;
+				}
+			});
+
+			tasks.add(task2);
+
+		}
+
+		for (Future<Integer> future : tasks) {
+
+			try {
+				future.get();
+			} catch (Exception e) {
+				System.out.println("Error in: " + e.getMessage());
+				e.printStackTrace();
+			}
+
+		}
+
+		executor.shutdown();
+
+		executor.awaitTermination(20, TimeUnit.MINUTES);
+
+	}
+
+	public void extractText() throws InterruptedException {
 
 		ExecutorService executor = Executors.newFixedThreadPool(4);
 
@@ -187,8 +231,7 @@ public class Converter {
 
 	}
 
-	protected void extractPdfData(ReaderDocument document) {
-		System.out.print("Extracting outline/annotations... ");
+	public void extractPdfData() {
 		try {
 			document.extractData();
 		} catch (Exception e) {
@@ -196,12 +239,10 @@ public class Converter {
 		}
 	}
 
-	protected void indexDocument(ReaderDocument document) throws IOException,
-			EncodingException, EOFException, EntityException, ParseException,
-			XPathParseException, NavException, XPathEvalException,
-			JDOMException {
+	public void indexDocument() throws IOException, EncodingException,
+			EOFException, EntityException, ParseException, XPathParseException,
+			NavException, XPathEvalException, TranscodeException {
 
-		System.out.print("Indexing documents... ");
 		Indexer indexer = new Indexer(document.getIndexFolder(), document
 				.getFolder().getName());
 
@@ -211,10 +252,10 @@ public class Converter {
 
 	}
 
-	private void manipulateTextFiles(ReaderDocument document)
-			throws EncodingException, EOFException, EntityException,
-			XPathParseException, NavException, XPathEvalException,
-			ParseException, IOException, ModifyException, TranscodeException {
+	public void manipulateTextFiles() throws EncodingException, EOFException,
+			EntityException, XPathParseException, NavException,
+			XPathEvalException, ParseException, IOException, ModifyException,
+			TranscodeException {
 
 		File[] files = document.getTextFolder().listFiles(xmlFilter);
 
@@ -226,10 +267,7 @@ public class Converter {
 
 	}
 
-	private void extractImages(ReaderDocument document)
-			throws InterruptedException {
-
-		System.out.print("Converting pdf to images... ");
+	public void extractImages() throws InterruptedException {
 
 		ExecutorService executor = Executors.newFixedThreadPool(4);
 
@@ -267,9 +305,7 @@ public class Converter {
 
 	}
 
-	protected void addDocToDB(ReaderDocument document) throws IOException {
-
-		System.out.print("Storing images/text in database... ");
+	protected void addDocToDB() throws IOException {
 
 		BasicDBObject doc = new BasicDBObject();
 		doc.append("name", document.getFolder().getName());
@@ -325,7 +361,7 @@ public class Converter {
 
 	}
 
-	protected void autoIndexDocument(ReaderDocument document) {
+	protected void autoIndexDocument() {
 		// Auto indexing
 		// FileFilter filter = FileFilterUtils.suffixFileFilter(".xml");
 		// File[] rules = rulesFolder.listFiles(filter);

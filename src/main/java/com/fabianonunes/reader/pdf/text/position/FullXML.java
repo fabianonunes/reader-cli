@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import org.apache.commons.io.FileUtils;
-import org.jdom.JDOMException;
 
 import com.ximpleware.AutoPilot;
 import com.ximpleware.EOFException;
@@ -21,7 +20,7 @@ import com.ximpleware.VTDNav;
 import com.ximpleware.XPathEvalException;
 import com.ximpleware.XPathParseException;
 
-public class FullXML extends AbstractTextPosition {
+public class FullXML {
 
 	private VTDGen vg;
 	private VTDNav nav;
@@ -29,9 +28,7 @@ public class FullXML extends AbstractTextPosition {
 	public FullXML(File file) throws IOException, EncodingException,
 			EOFException, EntityException, ParseException {
 
-		super(file);
-
-		byte[] b = FileUtils.readFileToByteArray(getFile());
+		byte[] b = FileUtils.readFileToByteArray(file);
 
 		vg = new VTDGen();
 		vg.setDoc(b);
@@ -41,16 +38,8 @@ public class FullXML extends AbstractTextPosition {
 
 	}
 
-	@Override
-	public String calculatePositions(Integer pageNumber) throws Throwable {
-
-		return null;
-
-	}
-
 	public Map<Integer, StringBuffer> getTextOfPages(double pageCoverage)
-			throws JDOMException, XPathParseException, EncodingException,
-			EOFException, EntityException, ParseException, IOException,
+			throws XPathParseException, NumberFormatException,
 			XPathEvalException, NavException {
 
 		Map<Integer, StringBuffer> text = new TreeMap<Integer, StringBuffer>();
@@ -119,16 +108,15 @@ public class FullXML extends AbstractTextPosition {
 	}
 
 	public Map<Integer, StringBuffer> getTextOfPages()
-			throws EncodingException, EOFException, EntityException,
-			XPathParseException, ParseException, XPathEvalException,
-			NavException, JDOMException, IOException {
-
+			throws NumberFormatException, XPathParseException,
+			XPathEvalException, NavException {
 		return getTextOfPages(1);
 
 	}
 
 	public List<String> evaluateXPath(String query,
-			XPathEvaluator<String> evaluator) throws Exception {
+			XPathEvaluator<String> evaluator) throws XPathEvalException,
+			NavException, Exception {
 
 		List<String> retVal = new ArrayList<String>();
 

@@ -1,4 +1,4 @@
-package com.fabianonunes.reader.cli;
+package com.fabianonunes.reader.tasks;
 
 import java.io.File;
 import java.util.LinkedList;
@@ -15,6 +15,8 @@ import org.apache.commons.exec.ExecuteWatchdog;
 import org.apache.commons.exec.Executor;
 import org.apache.commons.exec.PumpStreamHandler;
 import org.apache.commons.io.output.ByteArrayOutputStream;
+
+import com.fabianonunes.reader.cli.Converter;
 
 public class BZipper {
 	

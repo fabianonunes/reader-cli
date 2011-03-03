@@ -13,16 +13,8 @@ import net.sf.json.JSONObject;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
-import org.jdom.JDOMException;
 
 import com.fabianonunes.reader.cli.pdf.PdfHandler;
-import com.fabianonunes.reader.text.index.Indexer;
-import com.ximpleware.EOFException;
-import com.ximpleware.EncodingException;
-import com.ximpleware.EntityException;
-import com.ximpleware.NavException;
-import com.ximpleware.XPathEvalException;
-import com.ximpleware.XPathParseException;
 
 public class ReaderDocument implements Serializable {
 
@@ -187,20 +179,6 @@ public class ReaderDocument implements Serializable {
 		String[] files = getThumbsFolder().list();
 
 		return files.length;
-
-	}
-
-	// TODO: remover esse método daqui
-	public void buildIndex() throws IOException, EncodingException,
-			EOFException, EntityException, com.ximpleware.ParseException,
-			XPathParseException, NavException, XPathEvalException,
-			JDOMException {
-
-		Indexer i = new Indexer(getIndexFolder(), getFolder().getName());
-
-		i.indexXMLFile(getOptiText());
-
-		i.close();
 
 	}
 

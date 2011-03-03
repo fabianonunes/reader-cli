@@ -3,7 +3,6 @@ package com.fabianonunes.reader.text.index;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.StringReader;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.lucene.analysis.Analyzer;
@@ -14,11 +13,7 @@ import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriter.MaxFieldLength;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
-import org.apache.lucene.store.RAMDirectory;
-import org.jdom.Element;
-import org.jdom.JDOMException;
-import org.jdom.input.SAXBuilder;
-import org.jdom.xpath.XPath;
+import org.apache.lucene.store.LockObtainFailedException;
 
 import com.fabianonunes.reader.text.analysys.VtdPositionPayloadAnalyzer;
 import com.ximpleware.AutoPilot;
@@ -28,6 +23,7 @@ import com.ximpleware.EntityException;
 import com.ximpleware.FastLongBuffer;
 import com.ximpleware.NavException;
 import com.ximpleware.ParseException;
+import com.ximpleware.TranscodeException;
 import com.ximpleware.VTDGen;
 import com.ximpleware.VTDNav;
 import com.ximpleware.XPathEvalException;
@@ -38,25 +34,33 @@ public class Indexer {
 	protected File folder;
 	protected Analyzer ppa;
 	private IndexWriter indexWriter;
-	private Directory d = new RAMDirectory();
+	private Directory directory;
 	private String docName;
 
 	public Indexer(File folder, String docName) throws IOException {
 
+		this(FSDirectory.open(folder), docName);
+
+	}
+
+	public Indexer(Directory d, String docName) throws CorruptIndexException,
+			LockObtainFailedException, IOException {
+
 		ppa = new VtdPositionPayloadAnalyzer();
 
-		d = FSDirectory.open(folder);
+		this.directory = d;
 
 		this.docName = docName;
 
-		indexWriter = new IndexWriter(d, ppa, true, MaxFieldLength.UNLIMITED);
+		indexWriter = new IndexWriter(this.directory, ppa, true,
+				MaxFieldLength.UNLIMITED);
 
 	}
 
 	public void indexXMLFile(File xmlFile) throws EncodingException,
 			EOFException, EntityException, ParseException, IOException,
 			XPathParseException, NavException, XPathEvalException,
-			JDOMException {
+			TranscodeException {
 
 		VTDGen vg;
 
@@ -66,7 +70,7 @@ public class Indexer {
 		byte[] b = FileUtils.readFileToByteArray(xmlFile);
 		vg = new VTDGen();
 		vg.setDoc(b);
-		vg.parse(false);
+		vg.parse(true);
 
 		VTDNav nav = vg.getNav();
 		ap.bind(nav);
@@ -92,10 +96,34 @@ public class Indexer {
 
 			}
 
+			fos.close();
+
 			t = nav.getAttrVal("n");
+
 			String pageNumber = nav.toNormalizedString(t);
 
-			indexPage(fos.toString(), pageNumber);
+			boolean hasChild = nav.toElement(VTDNav.FIRST_CHILD);
+
+			if (!hasChild) {
+				continue;
+			}
+
+			StringBuffer buffer = new StringBuffer();
+
+			while (nav.toElement(VTDNav.NEXT_SIBLING)) {
+
+				t = nav.getText();
+
+				if (t > -1) {
+
+					buffer.append(nav.toNormalizedString(t).trim() + " ");
+
+				}
+
+			}
+
+			indexPage(fos.toString("utf-8"), buffer.toString().trim(),
+					pageNumber);
 
 			count++;
 
@@ -105,12 +133,12 @@ public class Indexer {
 
 	}
 
-	private void indexPage(String contents, String pageNumber)
-			throws IOException, JDOMException {
+	private void indexPage(String contents, String plaintext, String pageNumber)
+			throws IOException {
+
+		System.out.println(plaintext);
 
 		Document document = new Document();
-
-		String plaintext = getText(contents);
 
 		// TokenStream tokenStream = TokenSources.getTokenStream("content",
 		// contents, ppa);
@@ -136,24 +164,14 @@ public class Indexer {
 
 	}
 
-	private String getText(String text) throws JDOMException, IOException {
-
-		SAXBuilder builder = new SAXBuilder();
-		builder.setValidation(false);
-		builder.setIgnoringElementContentWhitespace(true);
-		org.jdom.Document doc = builder.build(new StringReader(text));
-
-		XPath xpath = XPath.newInstance("//page");
-
-		Element page = (Element) xpath.selectSingleNode(doc);
-
-		return page.getValue().replaceAll("\\s+", " ").trim();
-
-	}
-
 	public void close() throws CorruptIndexException, IOException {
+		indexWriter.commit();
 		indexWriter.optimize();
 		indexWriter.close();
+	}
+	
+	public IndexWriter getIndexWriter(){
+		return indexWriter;
 	}
 
 }

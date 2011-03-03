@@ -45,7 +45,7 @@ public class Classifier {
 	}
 
 	public TreeMap<String, List<Integer>> analyze(File[] rules)
-			throws JDOMException, IOException, ParseException {
+			throws IOException, ParseException, JDOMException {
 
 		TreeMap<String, List<Integer>> results = new TreeMap<String, List<Integer>>();
 

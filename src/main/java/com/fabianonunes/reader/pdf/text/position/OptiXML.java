@@ -13,13 +13,11 @@ import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 
 import com.ximpleware.AutoPilot;
-import com.ximpleware.EOFException;
-import com.ximpleware.EncodingException;
-import com.ximpleware.EntityException;
 import com.ximpleware.FastLongBuffer;
 import com.ximpleware.ModifyException;
 import com.ximpleware.NavException;
 import com.ximpleware.ParseException;
+import com.ximpleware.PilotException;
 import com.ximpleware.TranscodeException;
 import com.ximpleware.VTDGen;
 import com.ximpleware.VTDNav;
@@ -33,16 +31,15 @@ public class OptiXML {
 	private AutoPilot ap;
 	private VTDNav nav;
 
-	public OptiXML(File file) throws IOException, EncodingException,
-			EOFException, EntityException, ParseException, NavException {
+	public OptiXML(File file) {
 
 		this.file = file;
 
 	}
 
-	public void optimize() throws XPathParseException, NavException,
-			IOException, XPathEvalException, ModifyException,
-			TranscodeException, ParseException {
+	public void optimize() throws NavException, ModifyException,
+			XPathParseException, XPathEvalException, ParseException,
+			TranscodeException, IOException {
 
 		VTDGen vg = new VTDGen();
 
@@ -250,12 +247,6 @@ public class OptiXML {
 
 			xm.output(optiOS);
 
-			// ByteArrayOutputStream baos = new ByteArrayOutputStream();
-			//
-			// baos.close();
-			//
-			// InputStream is = new ByteArrayInputStream(baos.toByteArray());
-			//
 			// Tidy tidy = new Tidy();
 			// tidy.setXmlTags(true);
 			// tidy.setXmlOut(true);
@@ -266,31 +257,7 @@ public class OptiXML {
 			// tidy.setQuiet(true);
 			// tidy.setOutputEncoding("utf8");
 			// tidy.setForceOutput(true);
-			//
-			//
 			// tidy.parse(is, optiOS);
-			// optiOS.close();
-			//
-			// // simple
-			// baos = new ByteArrayOutputStream();
-			// baos.close();
-			//
-			// is = new ByteArrayInputStream(baos.toByteArray());
-			//
-			// tidy = new Tidy();
-			// tidy.setXmlTags(true);
-			// tidy.setXmlOut(true);
-			// tidy.setWraplen(255);
-			// tidy.setMakeClean(true);
-			// tidy.setInputEncoding("utf8");
-			// tidy.setIndentContent(true);
-			// tidy.setQuiet(true);
-			// tidy.setOutputEncoding("utf8");
-			// tidy.setForceOutput(true);
-			//
-			//
-			// tidy.parse(is, simpleOS);
-			// simpleOS.close();
 
 		}
 
@@ -330,7 +297,6 @@ public class OptiXML {
 			BufferedOutputStream gos = new BufferedOutputStream(
 					new GZIPOutputStream(new FileOutputStream(destFile)));
 
-
 			gos.write("<pdfxml>\n".getBytes());
 
 			int size = flb.size();
@@ -348,7 +314,7 @@ public class OptiXML {
 			gos.close();
 
 			flb.clear();
-			
+
 		}
 
 		ap.resetXPath();
@@ -375,8 +341,8 @@ public class OptiXML {
 		return file;
 	}
 
-	private void removeAttr(String attr, XMLModifier xm) throws NavException,
-			ModifyException {
+	private void removeAttr(String attr, XMLModifier xm) throws PilotException,
+			NavException, ModifyException {
 
 		ap.selectAttr(attr);
 		int t = ap.iterateAttr();

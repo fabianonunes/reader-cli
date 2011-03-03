@@ -2,7 +2,6 @@ package com.fabianonunes.reader;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
 import java.util.TreeMap;
@@ -18,12 +17,11 @@ import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.io.filefilter.FileFilterUtils;
-import org.jdom.output.Format;
-import org.jdom.output.XMLOutputter;
+import org.jdom.JDOMException;
 
+import com.fabianonunes.reader.cli.Converter;
 import com.fabianonunes.reader.pdf.outline.OutlineHandler;
 import com.fabianonunes.reader.pdf.text.position.OptiXML;
-import com.fabianonunes.reader.pdf.text.position.SimpleXML;
 import com.fabianonunes.reader.storage.ReaderDocument;
 import com.fabianonunes.reader.text.classification.Classifier;
 import com.ximpleware.EOFException;
@@ -50,79 +48,63 @@ public class CLIActions {
 
 		String metodo = line.getOptionValue("metodo");
 
-		if (metodo.equals("simple-xml")) {
+		ReaderDocument doc = new ReaderDocument(input);
 
-			simpleXML(input);
+		Converter c = new Converter(doc);
 
-		} else if (metodo.equals("merge-xml")) {
+		if (metodo.equals("build-index")) {
 
-			mergeXML(input);
+			c.indexDocument();
 
-		} else if (metodo.equals("optimized-xml")) {
+		} else if (metodo.equals("extract-text")) {
 
-			optimizeXML(input);
+			c.extractText();
 
-		} else {
+		} else if (metodo.equals("extract-images")) {
 
-			ReaderDocument doc = new ReaderDocument(input);
+			c.extractImages();
 
-			if (metodo.equals("build-index")) {
+		} else if (metodo.equals("optimize-text")) {
 
-				doc.buildIndex();
+			c.manipulateTextFiles();
 
-				FileFilter filter = FileFilterUtils.suffixFileFilter(".xml");
+		} else if (metodo.equals("optimize-images")) {
 
-				File[] rules = rulesFolder.listFiles(filter);
+			c.optimizeImages();
 
-				Classifier c = new Classifier(doc.getIndexFolder());
+		} else if (metodo.equals("auto-bookmark")) {
 
-				TreeMap<String, List<Integer>> results = c.analyze(rules);
+		} else if (metodo.equals("extract-data")) {
 
-				OutlineHandler outline = new OutlineHandler(results);
-
-				JSONObject data = new JSONObject();
-
-				data.put("children", outline.getRoot());
-
-				doc.saveData(data.toString());
-
-			} else if (metodo.equals("auto-bookmark")) {
-
-			} else if (metodo.equals("extract-outline")) {
-
-				doc.extractData();
-
-			}
+			c.extractPdfData();
 
 		}
 
 	}
 
-	private static void mergeXML(File input) throws EncodingException,
-			EOFException, EntityException, XPathParseException, NavException,
-			XPathEvalException, com.ximpleware.ParseException, IOException {
+	@Deprecated
+	public static void buildIndex(ReaderDocument doc) throws EncodingException,
+			EOFException, EntityException, com.ximpleware.ParseException,
+			XPathParseException, NavException, XPathEvalException, IOException,
+			org.apache.lucene.queryParser.ParseException, JDOMException {
 
-		XmlAssembler.assemble(input.listFiles(), new File(input, "full.xml"),
-				"//PAGE");
+		// doc.buildIndex();
 
-	}
+		FileFilter filter = FileFilterUtils.suffixFileFilter(".xml");
 
-	public static void simpleXML(File file) throws Exception {
+		File[] rules = rulesFolder.listFiles(filter);
 
-		SimpleXML xmlt = new SimpleXML(file);
+		Classifier c = new Classifier(doc.getIndexFolder());
 
-		xmlt.convert();
+		TreeMap<String, List<Integer>> results = c.analyze(rules);
 
-		XMLOutputter outputter = new XMLOutputter(Format.getPrettyFormat());
+		OutlineHandler outline = new OutlineHandler(results);
 
-		FileWriter w = new FileWriter(
-				new File(file.getParentFile(), "text.xml").getAbsolutePath());
+		JSONObject data = new JSONObject();
 
-		outputter.output(xmlt.getDoc(), w);
+		data.put("children", outline.getRoot());
 
-		xmlt.resetDocument();
-
-		xmlt = null;
+		doc.saveData(data.toString());
 
 	}
 
@@ -135,8 +117,6 @@ public class CLIActions {
 		OptiXML opti = new OptiXML(file);
 
 		opti.optimize();
-
-		opti = null;
 
 	}
 
@@ -170,8 +150,8 @@ public class CLIActions {
 		Option metodo = OptionBuilder
 				.withArgName("metodo")
 				.withDescription(
-						"[simple-xml, " + "optimized-xml, build-index, "
-								+ "extract-outline, auto-bookmark, merge-xml]")
+						"[xml, build-index, "
+								+ "extract-outline, auto-bookmark]")
 				.isRequired().hasArg().create("metodo");
 
 		Option input = OptionBuilder.withArgName("input").hasArg().isRequired()

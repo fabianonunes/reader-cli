@@ -9,7 +9,6 @@ import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
 import org.apache.lucene.analysis.tokenattributes.PayloadAttribute;
 import org.apache.lucene.analysis.tokenattributes.TermAttribute;
 import org.apache.lucene.index.Payload;
-import org.jdom.JDOMException;
 
 import com.ximpleware.AutoPilot;
 import com.ximpleware.EOFException;
@@ -32,7 +31,7 @@ public class VtdPositionTokenizer extends Tokenizer {
 	private VTDNav nav;
 	private AutoPilot ap;
 
-	public VtdPositionTokenizer(Reader in) throws JDOMException, IOException,
+	public VtdPositionTokenizer(Reader in) throws IOException,
 			EncodingException, EOFException, EntityException, ParseException,
 			XPathParseException, NavException {
 
