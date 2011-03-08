@@ -33,7 +33,7 @@ public class RemoteIndexer {
 
 		this.documentName = documentName;
 
-		server = new CommonsHttpSolrServer("http://localhost:8081/solr");
+		server = new CommonsHttpSolrServer("http://localhost:8080/solr");
 
 	}
 
