@@ -114,6 +114,11 @@
 			<artifactId>lucene-misc</artifactId>
 			<version>3.0.2</version>
 		</dependency>
+		<dependency>
+			<groupId>org.apache.solr</groupId>
+			<artifactId>solr-solrj</artifactId>
+			<version>1.4.1</version>
+		</dependency>
 	</dependencies>
 	<repositories>
 		<repository>
