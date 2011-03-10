@@ -1,4 +1,4 @@
-package com.fabianonunes.reader.text.search;
+package com.fabianonunes.reader.pdf.stripper;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,10 +28,6 @@ import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Version;
 import org.apache.pdfbox.pdmodel.PDDocument;
 
-import com.fabianonunes.reader.pdf.stripper.PageExtractor;
-import com.fabianonunes.reader.pdf.stripper.PageStripper;
-import com.fabianonunes.reader.text.analysys.CustomAnalyzer;
-
 public class PageSearcher {
 
 	private IndexSearcher searcher;
@@ -42,7 +38,7 @@ public class PageSearcher {
 
 		d = FSDirectory.open(indexDir);
 
-		searcher = new IndexSearcher(d);
+		searcher = new IndexSearcher(d, true);
 
 	}
 
@@ -50,7 +46,7 @@ public class PageSearcher {
 
 		Map<String, Set<Integer>> results = new TreeMap<String, Set<Integer>>();
 
-		QueryParser p = new ComplexPhraseQueryParser(Version.LUCENE_30,
+		QueryParser p = new ComplexPhraseQueryParser(Version.LUCENE_29,
 				"content", analyzer);
 
 		Query query = p.parse("contrarrazoes OR contrarazoes OR contrarrazoar");
