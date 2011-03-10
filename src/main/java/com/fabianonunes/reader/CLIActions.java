@@ -21,9 +21,9 @@ import org.jdom.JDOMException;
 
 import com.fabianonunes.reader.cli.Converter;
 import com.fabianonunes.reader.pdf.outline.OutlineHandler;
-import com.fabianonunes.reader.pdf.text.position.OptiXML;
 import com.fabianonunes.reader.storage.ReaderDocument;
 import com.fabianonunes.reader.text.classification.Classifier;
+import com.fabianonunes.reader.text.position.OptiXML;
 import com.ximpleware.EOFException;
 import com.ximpleware.EncodingException;
 import com.ximpleware.EntityException;

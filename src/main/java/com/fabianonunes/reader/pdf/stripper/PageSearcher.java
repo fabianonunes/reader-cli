@@ -28,6 +28,8 @@ import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Version;
 import org.apache.pdfbox.pdmodel.PDDocument;
 
+import com.fabianonunes.reader.text.analysys.CustomAnalyzer;
+
 public class PageSearcher {
 
 	private IndexSearcher searcher;

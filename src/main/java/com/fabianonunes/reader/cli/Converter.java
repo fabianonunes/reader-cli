@@ -16,13 +16,13 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.solr.client.solrj.SolrServerException;
 
-import com.fabianonunes.reader.pdf.text.position.OptiXML;
 import com.fabianonunes.reader.storage.ReaderDocument;
 import com.fabianonunes.reader.tasks.CommandLineExecutor;
 import com.fabianonunes.reader.tasks.PdfToImageTask;
 import com.fabianonunes.reader.tasks.PdfToXMLTask;
 import com.fabianonunes.reader.tasks.XmlAssembler;
 import com.fabianonunes.reader.text.index.RemoteIndexer;
+import com.fabianonunes.reader.text.position.OptiXML;
 import com.itextpdf.text.pdf.PdfReader;
 import com.itextpdf.text.pdf.RandomAccessFileOrArray;
 import com.mongodb.BasicDBObject;

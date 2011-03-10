@@ -169,6 +169,14 @@
 		</dependency>
 
 
+		
+		
+		<dependency>
+			<groupId>com.fabianonunes</groupId>
+			<artifactId>reader-index</artifactId>
+			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+		
 	</dependencies>
 	<repositories>
 		<repository>
