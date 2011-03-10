@@ -54,6 +54,10 @@ public class CLIActions {
 
 		if (metodo.equals("build-index")) {
 
+			c.indexDocument(line.getOptionValue("solrHome"));
+
+		} else if (metodo.equals("build-lucene-index")) {
+
 			c.indexDocument();
 
 		} else if (metodo.equals("extract-text")) {
@@ -164,6 +168,8 @@ public class CLIActions {
 		Options options = new Options();
 		options.addOption(input);
 		options.addOption(metodo);
+		options.addOption(OptionBuilder.withArgName("solrHome").hasArg()
+				.create("solrHome"));
 		options.addOption("debug", false, "debug");
 
 		return options;

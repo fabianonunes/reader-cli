@@ -3,6 +3,7 @@ package com.fabianonunes.reader.cli;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -12,16 +13,20 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import javax.xml.parsers.ParserConfigurationException;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.solr.client.solrj.SolrServerException;
+import org.xml.sax.SAXException;
 
 import com.fabianonunes.reader.storage.ReaderDocument;
 import com.fabianonunes.reader.tasks.CommandLineExecutor;
 import com.fabianonunes.reader.tasks.PdfToImageTask;
 import com.fabianonunes.reader.tasks.PdfToXMLTask;
 import com.fabianonunes.reader.tasks.XmlAssembler;
-import com.fabianonunes.reader.text.index.RemoteIndexer;
+import com.fabianonunes.reader.text.index.Indexer;
+import com.fabianonunes.reader.text.index.SolrIndexer;
 import com.fabianonunes.reader.text.position.OptiXML;
 import com.itextpdf.text.pdf.PdfReader;
 import com.itextpdf.text.pdf.RandomAccessFileOrArray;
@@ -98,19 +103,6 @@ public class Converter {
 		File pdfFile = document.getPdf();
 
 		numOfPages = calcNumOfPages(pdfFile);
-
-		m = new Mongo();// "10.0.223.163"
-
-		db = m.getDB("sesdi2");
-
-		// db.authenticate("fabiano_sesdi2", "timestamp-2010".toCharArray());
-
-		processos = db.getCollection("processos");
-
-		processos.ensureIndex(new BasicDBObject("name", 1).append("unique",
-				true));
-
-		gfs = new GridFS(db, "images");
 
 	}
 
@@ -242,11 +234,10 @@ public class Converter {
 
 	public void indexDocument() throws IOException, EncodingException,
 			EOFException, EntityException, ParseException, XPathParseException,
-			NavException, XPathEvalException, TranscodeException,
-			SolrServerException {
+			NavException, XPathEvalException, TranscodeException {
 
-		RemoteIndexer indexer = new RemoteIndexer(document.getFolder()
-				.getName());
+		Indexer indexer = new Indexer(document.getIndexFolder(), document
+				.getFolder().getName());
 
 		indexer.indexXMLFile(document.getOptiText());
 
@@ -306,6 +297,19 @@ public class Converter {
 	}
 
 	public void storeToDB() throws IOException {
+
+		m = new Mongo();// "10.0.223.163"
+
+		db = m.getDB("sesdi2");
+
+		// db.authenticate("fabiano_sesdi2", "timestamp-2010".toCharArray());
+
+		processos = db.getCollection("processos");
+
+		processos.ensureIndex(new BasicDBObject("name", 1).append("unique",
+				true));
+
+		gfs = new GridFS(db, "images");
 
 		BasicDBObject doc = new BasicDBObject();
 		doc.append("name", document.getFolder().getName());
@@ -389,6 +393,19 @@ public class Converter {
 		Double r = (c - timer) / 1000d;
 
 		System.out.println("[" + r + "secs]");
+
+	}
+
+	public void indexDocument(String solrHome) throws MalformedURLException,
+			IOException, ParserConfigurationException, SAXException,
+			EncodingException, EOFException, EntityException, ParseException,
+			XPathParseException, NavException, XPathEvalException,
+			TranscodeException, SolrServerException {
+
+		SolrIndexer indexer = new SolrIndexer(document.getFolder().getName(),
+				"http://localhost:8081/reader-index");
+
+		indexer.indexXMLFile(document.getOptiText());
 
 	}
 
