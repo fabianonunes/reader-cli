@@ -18,6 +18,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.solr.client.solrj.SolrServerException;
+import org.apache.solr.client.solrj.response.UpdateResponse;
 import org.xml.sax.SAXException;
 
 import com.fabianonunes.reader.storage.ReaderDocument;
@@ -69,8 +70,6 @@ public class Converter {
 
 	private Integer numOfPages;
 
-	private long timer;
-
 	private ReaderDocument document;
 
 	public static void main(String[] args) throws Throwable {
@@ -85,11 +84,9 @@ public class Converter {
 
 			ReaderDocument rdd = ReaderDocument.generateDocument(file);
 
-			Converter c = new Converter(rdd);
+			new Converter(rdd);
 
-			c.convert();
-
-			// break;
+			// tc.convert();
 
 		}
 
@@ -103,40 +100,6 @@ public class Converter {
 		File pdfFile = document.getPdf();
 
 		numOfPages = calcNumOfPages(pdfFile);
-
-	}
-
-	public void convert() throws Throwable {
-		//
-		startTimer();
-		extractImages();
-		endTimer();
-
-		optimizeImages();
-		//
-		startTimer();
-		extractText();
-		endTimer();
-		//
-		startTimer();
-		manipulateTextFiles();
-		endTimer();
-		// //
-		// startTimer();
-		storeToDB();
-		// endTimer();
-		// //
-		// startTimer();
-		// indexDocument(document);
-		// endTimer();
-		//
-		// // startTimer();
-		// // autoIndexDocument(document);
-		// // endTimer();
-		//
-		// startTimer();
-		extractPdfData();
-		// endTimer();
 
 	}
 
@@ -298,36 +261,36 @@ public class Converter {
 
 	public void storeToDB() throws IOException {
 
-		m = new Mongo();// "10.0.223.163"
+		String name = document.getFolder().getName();
+
+		m = new Mongo();
 
 		db = m.getDB("sesdi2");
 
-		// db.authenticate("fabiano_sesdi2", "timestamp-2010".toCharArray());
-
 		processos = db.getCollection("processos");
+
+		BasicDBObject qname = new BasicDBObject("name", name);
+
+		processos.remove(qname);
 
 		processos.ensureIndex(new BasicDBObject("name", 1).append("unique",
 				true));
 
 		gfs = new GridFS(db, "images");
+		gfs.remove(qname);
 
 		BasicDBObject doc = new BasicDBObject();
-		doc.append("name", document.getFolder().getName());
+		doc.append("name", name);
 		doc.append("pages", numOfPages);
 		processos.save(doc);
-
-		// storing images
 
 		File[] thumbsFiles = document.getThumbsFolder().listFiles(pngFilter);
 		File[] pngFiles = document.getImageFolder().listFiles(pngFilter);
 		File[] xmlGzFiles = document.getSimpleTextFolder().listFiles();
 
-		storeImages(pngFiles, document.getFolder().getName());
-		storeImages(thumbsFiles, document.getFolder().getName() + "/t");
-		storeImages(xmlGzFiles, document.getFolder().getName() + "/s");
-
-		// FileUtils.cleanDirectory(document.getIndexFolder());
-		// FileUtils.forceDelete(document.getImageFolder());
+		storeImages(pngFiles, name, name);
+		storeImages(thumbsFiles, name + "/t", name);
+		storeImages(xmlGzFiles, name + "/s", name);
 
 	}
 
@@ -346,7 +309,7 @@ public class Converter {
 
 	}
 
-	private void storeImages(File[] pngFiles, String preffix)
+	private void storeImages(File[] pngFiles, String preffix, String name)
 			throws IOException {
 
 		for (File file : pngFiles) {
@@ -357,6 +320,8 @@ public class Converter {
 
 			gfsFile.setFilename(preffix + "/"
 					+ file.getName().replaceAll("p-0*", ""));
+
+			gfsFile.put("name", name);
 
 			gfsFile.save();
 
@@ -380,33 +345,22 @@ public class Converter {
 		// document.saveData(data.toString());
 	}
 
-	private void startTimer() {
-
-		timer = System.currentTimeMillis();
-
-	}
-
-	private void endTimer() {
-
-		long c = System.currentTimeMillis();
-
-		Double r = (c - timer) / 1000d;
-
-		System.out.println("[" + r + "secs]");
-
-	}
-
 	public void indexDocument(String solrHome) throws MalformedURLException,
 			IOException, ParserConfigurationException, SAXException,
 			EncodingException, EOFException, EntityException, ParseException,
 			XPathParseException, NavException, XPathEvalException,
 			TranscodeException, SolrServerException {
 
-		SolrIndexer indexer = new SolrIndexer(document.getFolder().getName(),
+		String name = document.getFolder().getName();
+
+		SolrIndexer indexer = new SolrIndexer(name,
 				"http://localhost:8081/reader-index");
+
+		UpdateResponse ur = indexer.getServer().deleteByQuery("page:" + name);
+
+		System.out.println(ur);
 
 		indexer.indexXMLFile(document.getOptiText());
 
 	}
-
 }
