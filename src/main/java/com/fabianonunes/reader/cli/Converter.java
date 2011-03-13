@@ -356,7 +356,7 @@ public class Converter {
 		SolrIndexer indexer = new SolrIndexer(name,
 				"http://localhost:8081/reader-index");
 
-		UpdateResponse ur = indexer.getServer().deleteByQuery("page:" + name);
+		UpdateResponse ur = indexer.getServer().deleteByQuery("name:" + name);
 
 		System.out.println(ur);
 
