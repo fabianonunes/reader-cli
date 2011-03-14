@@ -48,7 +48,7 @@ public class PageSearcher {
 
 		Map<String, Set<Integer>> results = new TreeMap<String, Set<Integer>>();
 
-		QueryParser p = new ComplexPhraseQueryParser(Version.LUCENE_29,
+		QueryParser p = new ComplexPhraseQueryParser(Version.LUCENE_40,
 				"content", analyzer);
 
 		Query query = p.parse("contrarrazoes OR contrarazoes OR contrarrazoar");
