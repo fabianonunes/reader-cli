@@ -151,6 +151,12 @@
 			<groupId>org.apache.solr</groupId>
 			<artifactId>solr-core</artifactId>
 			<version>1.4.1</version>
+			<exclusions>
+				<exclusion>
+					<artifactId>lucene-highlighter</artifactId>
+					<groupId>org.apache.lucene</groupId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.solr</groupId>
