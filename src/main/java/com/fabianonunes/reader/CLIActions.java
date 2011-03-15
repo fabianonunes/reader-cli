@@ -54,7 +54,15 @@ public class CLIActions {
 
 		if (metodo.equals("build-index")) {
 
-			c.indexDocument(line.getOptionValue("solrHome"));
+			String solrHost = line.getOptionValue("solrHost");
+			String xmlFile = line.getOptionValue("xmlFile");
+			String documentName = line.getOptionValue("documentName");
+
+			if (xmlFile != null && solrHost != null) {
+				c.indexDocument(solrHost, new File(xmlFile), documentName);
+			} else {
+				c.indexDocument(solrHost);
+			}
 
 		} else if (metodo.equals("build-lucene-index")) {
 
@@ -168,8 +176,14 @@ public class CLIActions {
 		Options options = new Options();
 		options.addOption(input);
 		options.addOption(metodo);
-		options.addOption(OptionBuilder.withArgName("solrHome").hasArg()
-				.create("solrHome"));
+
+		options.addOption(OptionBuilder.withArgName("solrHost").hasArg()
+				.create("solrHost"));
+		options.addOption(OptionBuilder.withArgName("xmlFile").hasArg()
+				.create("xmlFile"));
+		options.addOption(OptionBuilder.withArgName("documentName").hasArg()
+				.create("documentName"));
+
 		options.addOption("debug", false, "debug");
 
 		return options;

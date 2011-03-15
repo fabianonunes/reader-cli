@@ -18,7 +18,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.solr.client.solrj.SolrServerException;
-import org.apache.solr.client.solrj.response.UpdateResponse;
 import org.xml.sax.SAXException;
 
 import com.fabianonunes.reader.storage.ReaderDocument;
@@ -345,7 +344,7 @@ public class Converter {
 		// document.saveData(data.toString());
 	}
 
-	public void indexDocument(String solrHome) throws MalformedURLException,
+	public void indexDocument(String solrHost) throws MalformedURLException,
 			IOException, ParserConfigurationException, SAXException,
 			EncodingException, EOFException, EntityException, ParseException,
 			XPathParseException, NavException, XPathEvalException,
@@ -353,14 +352,21 @@ public class Converter {
 
 		String name = document.getFolder().getName();
 
-		SolrIndexer indexer = new SolrIndexer(name,
-				"http://localhost:8081/reader-index");
-
-		UpdateResponse ur = indexer.getServer().deleteByQuery("name:" + name);
-
-		System.out.println(ur);
-
-		indexer.indexXMLFile(document.getOptiText());
+		indexDocument(solrHost, document.getOptiText(), name);
 
 	}
+
+	public void indexDocument(String solrHost, File xmlFile, String documentName)
+			throws SolrServerException, IOException, EncodingException,
+			EOFException, EntityException, ParseException, XPathParseException,
+			NavException, XPathEvalException, TranscodeException {
+
+		SolrIndexer indexer = new SolrIndexer(documentName, solrHost);
+
+		indexer.getServer().deleteByQuery("name:" + documentName);
+
+		indexer.indexXMLFile(xmlFile);
+
+	}
+
 }
