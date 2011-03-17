@@ -49,7 +49,7 @@ public class IndexerTest {
 		
 		IndexSearcher s = new IndexSearcher(dir);
 		
-		QueryParser p = new QueryParser(Version.LUCENE_40, "content", new WhitespaceAnalyzer(Version.LUCENE_40));
+		QueryParser p = new QueryParser(Version.LUCENE_40, "word", new WhitespaceAnalyzer(Version.LUCENE_40));
 		
 		Query q = p.parse("content:correia");
 		

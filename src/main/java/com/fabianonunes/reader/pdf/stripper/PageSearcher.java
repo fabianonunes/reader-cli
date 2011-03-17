@@ -49,7 +49,7 @@ public class PageSearcher {
 		Map<String, Set<Integer>> results = new TreeMap<String, Set<Integer>>();
 
 		QueryParser p = new ComplexPhraseQueryParser(Version.LUCENE_40,
-				"content", analyzer);
+				"word", analyzer);
 
 		Query query = p.parse("contrarrazoes OR contrarazoes OR contrarrazoar");
 
