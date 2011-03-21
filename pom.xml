@@ -104,7 +104,7 @@
 		<dependency>
 			<groupId>com.fabianonunes</groupId>
 			<artifactId>reader-index</artifactId>
-			<version>0.0.1-SNAPSHOT</version>
+			<version>0.0.2-SNAPSHOT</version>
 		</dependency>
 
 	</dependencies>
