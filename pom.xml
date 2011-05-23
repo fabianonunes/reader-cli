@@ -60,7 +60,7 @@
 		<dependency>
 			<groupId>net.sf.vtd-xml</groupId>
 			<artifactId>vtd-xml</artifactId>
-			<version>2.9</version>
+			<version>2.10</version>
 		</dependency>
 		<dependency>
 			<groupId>commons-lang</groupId>
