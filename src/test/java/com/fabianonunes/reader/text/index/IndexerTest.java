@@ -4,7 +4,7 @@ import java.io.File;
 
 import junit.framework.Assert;
 
-import org.apache.lucene.analysis.WhitespaceAnalyzer;
+import org.apache.lucene.analysis.core.WhitespaceAnalyzer;
 import org.apache.lucene.queryParser.QueryParser;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
@@ -49,8 +49,8 @@ public class IndexerTest {
 
 		IndexSearcher s = new IndexSearcher(dir);
 
-		QueryParser p = new QueryParser(Version.LUCENE_31, "word",
-				new WhitespaceAnalyzer(Version.LUCENE_31));
+		QueryParser p = new QueryParser(Version.LUCENE_40, "word",
+				new WhitespaceAnalyzer(Version.LUCENE_40));
 
 		Query q = p.parse("content:correia");
 
